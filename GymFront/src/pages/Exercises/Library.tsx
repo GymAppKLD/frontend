@@ -1,8 +1,10 @@
+import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { fetchAllExercises } from "../../api/exerciseApi";
 import type { Exercise } from "../../types/exercise";
 
 export default function Library() {
+  const navigate = useNavigate();
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +33,9 @@ export default function Library() {
           <h1 className="page-title">Exercises</h1>
           <p className="page-sub">Browse and manage your exercise library</p>
         </div>
-        <button className="btn btn-primary">+ New Exercise</button>
+        <button className="btn btn-primary" onClick={() => navigate("/exercises/create")}>
+          + New Exercise
+        </button>
       </div>
 
       <div className="search" style={{ width: "100%", maxWidth: 400, marginBottom: 14 }}>
@@ -68,7 +72,11 @@ export default function Library() {
             <div className="section-label">{group}</div>
             <div className="grid g-3">
               {items.map((exercise) => (
-                <div className="muscle-card" key={exercise.id}>
+                <div
+                  className="muscle-card"
+                  key={exercise.id}
+                  onClick={() => navigate(`/exercises/${exercise.id}/progress`)}
+                >
                   <div className="mname">{exercise.name}</div>
                   <div className="msub">{exercise.muscleGroup}</div>
                 </div>
