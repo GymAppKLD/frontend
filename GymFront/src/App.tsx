@@ -4,6 +4,10 @@ import Layout from "./layout/Layout";
 import Library from "./pages/Exercises/Library";
 import Create from "./pages/Exercises/Create";
 import Progress from "./pages/Exercises/Progress";
+import LogWorkout from "./pages/Workouts/LogWorkout";
+import WorkoutDetails from "./pages/Workouts/WorkoutDetails";
+import WorkoutsList from "./pages/Workouts/WorkoutsList";
+import Dashboard from "./pages/Dashboard";
 import Placeholder from "./pages/Placeholder";
 
 function App() {
@@ -12,8 +16,10 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route element={<Layout />}>
-            <Route path="/" element={<Placeholder title="Dashboard" subtitle="Track your performance and progression" />} />
-            <Route path="/workouts" element={<Placeholder title="My Workouts" subtitle="Record, review and manage your training sessions" />} />
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/workouts/log" element={<LogWorkout />} />
+            <Route path="/workouts/:id" element={<WorkoutDetails />} />
+            <Route path="/workouts" element={<WorkoutsList />} />
             <Route path="/exercises" element={<Library />} />
             <Route path="/exercises/create" element={<Create />} />
             <Route path="/exercises/:id/progress" element={<Progress />} />
