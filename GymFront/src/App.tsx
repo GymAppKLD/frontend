@@ -8,6 +8,7 @@ import LogWorkout from "./pages/Workouts/LogWorkout";
 import WorkoutDetails from "./pages/Workouts/WorkoutDetails";
 import WorkoutsList from "./pages/Workouts/WorkoutsList";
 import Dashboard from "./pages/Dashboard";
+import History from "./pages/History";
 import Placeholder from "./pages/Placeholder";
 
 function App() {
@@ -23,7 +24,7 @@ function App() {
             <Route path="/exercises" element={<Library />} />
             <Route path="/exercises/create" element={<Create />} />
             <Route path="/exercises/:id/progress" element={<Progress />} />
-            <Route path="/history" element={<Placeholder title="History" subtitle="Your complete training timeline" />} />
+            <Route path="/history" element={<History />} />
             <Route path="/progress" element={<Placeholder title="Progress" subtitle="Understand your performance over time" />} />
             <Route path="/goals" element={<Placeholder title="Goals" subtitle="Set performance targets and track your progress" />} />
             <Route path="/settings" element={<Placeholder title="Settings" />} />
