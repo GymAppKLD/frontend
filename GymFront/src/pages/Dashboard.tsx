@@ -1,30 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchAllWorkouts } from "../api/workoutApi";
+import { fetchDashboardStats } from "../api/memberApi";
+import { useAuth } from "../context/AuthContext";
 import type { WorkoutSummary } from "../types/workout";
-
-// --- mock data (aggregate stats not yet exposed by the backend) ---
-const STATS = [
-  { icon: "workouts", num: "24", label: "Workouts this month", bg: "var(--purple-light)", color: "var(--purple)" },
-  { icon: "volume", num: "12,450 kg", label: "Total volume", bg: "var(--teal-light)", color: "var(--teal)" },
-  { icon: "load", num: "74.4 kg", label: "Average load", bg: "var(--orange-light)", color: "var(--orange)" },
-  { icon: "trend", num: "+18.4%", label: "Overall progress", bg: "#FDEAF1", color: "var(--pink)", trend: "up" },
-];
-
-const PRIORITY_EXERCISES = [
-  { name: "Bench Press", group: "Chest & Triceps", vol: "2,530 kg", pct: "+30.4%", points: [3, 5, 4, 7, 6, 9, 8] },
-  { name: "Barbell Squat", group: "Lower 2", vol: "2,860 kg", pct: "+18.2%", points: [4, 5, 5, 6, 7, 8, 9] },
-  { name: "Deadlift", group: "Lower 1", vol: "4,120 kg", pct: "+24.1%", points: [2, 4, 5, 6, 7, 7, 9] },
-];
-
-const MUSCLE_SPLIT = [
-  { label: "Chest", value: 28, color: "var(--purple)" },
-  { label: "Legs", value: 34, color: "var(--teal)" },
-  { label: "Back", value: 22, color: "var(--orange)" },
-  { label: "Arms", value: 16, color: "var(--pink)" },
-];
-
-const SETS_THIS_WEEK = { total: 232, points: [4, 6, 5, 8, 7, 10, 9] };
+import type { DashboardStatsDTO } from "../types/progress";
 
 const STAT_ICON_PATHS: Record<string, string> = {
   workouts: "M4 19V9a2 2 0 0 1 2-2h1a2 2 0 0 1 2 2v10 M15 19V9a2 2 0 0 1 2-2h1a2 2 0 0 1 2 2v10 M2 19h20 M9 12h6",
@@ -32,6 +12,15 @@ const STAT_ICON_PATHS: Record<string, string> = {
   load: "M12 20V10M18 20V4M6 20v-4",
   trend: "M23 6l-9.5 9.5-5-5L1 18 M17 6h6v6",
 };
+
+const MUSCLE_COLORS = [
+  "var(--purple)",
+  "var(--teal)",
+  "var(--orange)",
+  "var(--pink)",
+  "var(--purple-deep)",
+  "#6366f1",
+];
 
 function StatIcon({ icon, bg, color }: { icon: string; bg: string; color: string }) {
   return (
@@ -46,6 +35,7 @@ function StatIcon({ icon, bg, color }: { icon: string; bg: string; color: string
 }
 
 function MiniLineChart({ points, colorVar, h = 90 }: { points: number[]; colorVar: string; h?: number }) {
+  if (points.length < 2) return null;
   const w = 680;
   const pad = 28;
   const xs = points.map((_, i) => pad + i * ((w - pad * 2) / (points.length - 1)));
@@ -78,19 +68,21 @@ function MiniLineChart({ points, colorVar, h = 90 }: { points: number[]; colorVa
   );
 }
 
-function MuscleDonut() {
+function MuscleDonut({ groups }: { groups: { label: string; value: number; color: string }[] }) {
   const size = 140;
   const thickness = 16;
   const r = (size - thickness) / 2;
   const c = size / 2;
   const circ = 2 * Math.PI * r;
+  const total = groups.reduce((s, g) => s + g.value, 0);
   let offset = 0;
 
   return (
     <div className="donut-wrap" style={{ width: size, height: size }}>
       <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size}>
-        {MUSCLE_SPLIT.map((s) => {
-          const len = circ * (s.value / 100);
+        {groups.map((s) => {
+          const pct = total > 0 ? s.value / total : 0;
+          const len = circ * pct;
           const el = (
             <circle
               key={s.label}
@@ -118,18 +110,59 @@ function MuscleDonut() {
   );
 }
 
+function formatKg(v: number): string {
+  return v >= 1000 ? `${v.toLocaleString("en-US", { maximumFractionDigits: 0 })} sets` : `${v.toFixed(0)} sets`;
+}
+
+function formatPct(v: number): string {
+  const sign = v >= 0 ? "+" : "";
+  return `${sign}${v.toFixed(1)}%`;
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { token } = useAuth();
+  const [stats, setStats] = useState<DashboardStatsDTO | null>(null);
   const [recentWorkouts, setRecentWorkouts] = useState<WorkoutSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchAllWorkouts()
-      .then((w) => setRecentWorkouts(w.slice(0, 3)))
-      .catch(() => setError("Não foi possível carregar os treinos recentes."))
+    if (!token) return;
+    Promise.all([
+      fetchDashboardStats(),
+      fetchAllWorkouts(),
+    ])
+      .then(([s, w]) => {
+        setStats(s);
+        setRecentWorkouts(w.slice(0, 3));
+      })
+      .catch(() => setError("Failed to load dashboard data."))
       .finally(() => setLoading(false));
-  }, []);
+  }, [token]);
+
+  const statCards = stats
+    ? [
+        { icon: "workouts", num: String(stats.workoutsThisMonth), label: "Workouts this month", bg: "var(--purple-light)", color: "var(--purple)" },
+        { icon: "volume", num: formatKg(stats.totalVolumeKg), label: "Total volume", bg: "var(--teal-light)", color: "var(--teal)" },
+        { icon: "load", num: formatKg(stats.averageLoadKg), label: "Average load", bg: "var(--orange-light)", color: "var(--orange)" },
+        { icon: "trend", num: formatPct(stats.overallProgressPct), label: "Overall progress", bg: "#FDEAF1", color: "var(--pink)", trend: stats.overallProgressPct >= 0 ? "up" as const : "down" as const },
+      ]
+    : null;
+
+  const muscleGroups = stats
+    ? (() => {
+        const grouped: Record<string, number> = {};
+        stats.priorityExercises.forEach((e) => {
+          grouped[e.muscleGroup] = (grouped[e.muscleGroup] || 0) + e.volumeKg;
+        });
+        return Object.entries(grouped).map(([label, value], i) => ({
+          label,
+          value,
+          color: MUSCLE_COLORS[i % MUSCLE_COLORS.length],
+        }));
+      })()
+    : [];
 
   return (
     <>
@@ -143,58 +176,79 @@ export default function Dashboard() {
         </button>
       </div>
 
-      <div className="grid g-4" style={{ marginBottom: 18 }}>
-        {STATS.map((s) => (
-          <div className="card stat-card" key={s.label}>
-            <StatIcon icon={s.icon} bg={s.bg} color={s.color} />
-            <div>
-              <div className="stat-num">
-                {s.num}
-                {s.trend && <span className="trend up">↑</span>}
+      {loading && !stats && (
+        <div style={{ color: "var(--muted)", margin: "40px 0" }}>Loading...</div>
+      )}
+
+      {error && !stats && (
+        <div style={{ color: "var(--pink)", margin: "40px 0" }}>{error}</div>
+      )}
+
+      {statCards && (
+        <div className="grid g-4" style={{ marginBottom: 18 }}>
+          {statCards.map((s) => (
+            <div className="card stat-card" key={s.label}>
+              <StatIcon icon={s.icon} bg={s.bg} color={s.color} />
+              <div>
+                <div className="stat-num">
+                  {s.num}
+                  {s.trend && <span className={`trend ${s.trend}`}>↑</span>}
+                </div>
+                <div className="stat-label">{s.label}</div>
               </div>
-              <div className="stat-label">{s.label}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {stats && (
+        <div className="grid g-main-side" style={{ marginBottom: 18 }}>
+          <div className="card">
+            <div className="card-head">
+              <div className="card-title">Priority Exercises</div>
+              <span className="chip" onClick={() => navigate("/exercises")}>+ Add Exercise</span>
+            </div>
+            {stats.priorityExercises.length === 0 && (
+              <p style={{ color: "var(--muted)" }}>No exercise data yet.</p>
+            )}
+            <div className="grid g-3">
+              {stats.priorityExercises.map((e) => (
+                <div className="muscle-card" key={e.exerciseName}>
+                  <div className="mname">{e.exerciseName}</div>
+                  <div className="msub">{e.muscleGroup}</div>
+                  <MiniLineChart points={e.points} colorVar="var(--purple)" />
+                  <div className="mfoot">
+                    <span className="mono-num" style={{ color: "var(--ink)" }}>{formatKg(e.volumeKg)}</span>
+                    <span className={`trend ${e.progressPct >= 0 ? "up" : "down"}`}>{formatPct(e.progressPct)} ↑</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-        ))}
-      </div>
-
-      <div className="grid g-main-side" style={{ marginBottom: 18 }}>
-        <div className="card">
-          <div className="card-head">
-            <div className="card-title">Priority Exercises</div>
-            <span className="chip" onClick={() => navigate("/exercises")}>+ Add Exercise</span>
-          </div>
-          <div className="grid g-3">
-            {PRIORITY_EXERCISES.map((e) => (
-              <div className="muscle-card" key={e.name}>
-                <div className="mname">{e.name}</div>
-                <div className="msub">{e.group}</div>
-                <MiniLineChart points={e.points} colorVar="var(--purple)" />
-                <div className="mfoot">
-                  <span className="mono-num" style={{ color: "var(--ink)" }}>{e.vol}</span>
-                  <span className="trend up">{e.pct} ↑</span>
+          <div className="card">
+            <div className="card-head">
+              <div className="card-title">Split by Muscle Group</div>
+            </div>
+            {muscleGroups.length > 0 ? (
+              <>
+                <div style={{ display: "flex", justifyContent: "center" }}>
+                  <MuscleDonut groups={muscleGroups} />
                 </div>
-              </div>
-            ))}
+                <div className="legend">
+                  {muscleGroups.map((s) => (
+                    <div className="legend-item" key={s.label}>
+                      <span className="dot" style={{ background: s.color }} />
+                      {s.label}
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p style={{ color: "var(--muted)" }}>No data yet.</p>
+            )}
           </div>
         </div>
-        <div className="card">
-          <div className="card-head">
-            <div className="card-title">Split by Muscle Group</div>
-          </div>
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <MuscleDonut />
-          </div>
-          <div className="legend">
-            {MUSCLE_SPLIT.map((s) => (
-              <div className="legend-item" key={s.label}>
-                <span className="dot" style={{ background: s.color }} />
-                {s.label}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      )}
 
       <div className="grid g-main-side">
         <div className="card">
@@ -202,12 +256,10 @@ export default function Dashboard() {
             <div className="card-title">Recent Workouts</div>
             <span className="chip" onClick={() => navigate("/workouts")}>View all</span>
           </div>
-          {loading && <p style={{ color: "var(--muted)" }}>Carregando...</p>}
-          {error && <p style={{ color: "var(--pink)" }}>{error}</p>}
-          {!loading && !error && recentWorkouts.length === 0 && (
+          {recentWorkouts.length === 0 && !loading && (
             <p style={{ color: "var(--muted)" }}>Nenhum treino registrado ainda.</p>
           )}
-          {!loading && !error && recentWorkouts.length > 0 && (
+          {recentWorkouts.length > 0 && (
             <table>
               <tbody>
                 {recentWorkouts.map((w) => (
@@ -229,20 +281,21 @@ export default function Dashboard() {
             </table>
           )}
         </div>
-        <div
-          className="card"
-          style={{
-            background: "linear-gradient(160deg,var(--purple),var(--purple-deep))",
-            color: "var(--on-accent)",
-            border: "none",
-          }}
-        >
-          <div style={{ fontSize: 26, fontWeight: 800, fontFamily: "'Sora',sans-serif" }}>
-            {SETS_THIS_WEEK.total}
+        {stats && (
+          <div
+            className="card"
+            style={{
+              background: "linear-gradient(160deg,var(--purple),var(--purple-deep))",
+              color: "var(--on-accent)",
+              border: "none",
+            }}
+          >
+            <div style={{ fontSize: 26, fontWeight: 800, fontFamily: "'Sora',sans-serif" }}>
+              {stats.setsLoggedThisWeek}
+            </div>
+            <div style={{ fontSize: 12.5, opacity: 0.85, marginBottom: 14 }}>Sets logged this week</div>
           </div>
-          <div style={{ fontSize: 12.5, opacity: 0.85, marginBottom: 14 }}>Sets logged this week</div>
-          <MiniLineChart points={SETS_THIS_WEEK.points} colorVar="var(--on-accent)" />
-        </div>
+        )}
       </div>
     </>
   );

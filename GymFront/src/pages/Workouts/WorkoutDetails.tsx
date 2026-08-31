@@ -34,36 +34,51 @@ export default function WorkoutDetails() {
         <>
           <div className="page-head">
             <div>
-              <h1 className="page-title">{workout.name}</h1>
-              <p className="page-sub">Aluno: {workout.memberName}</p>
+              <h1 className="page-title" style={{ fontSize: 24 }}>Workout: {workout.name}</h1>
+              <p className="page-sub">Status: {workout.status}</p>
             </div>
           </div>
 
-          {workout.exercises.map((exercise, i) => (
-            <div className="card" key={i} style={{ marginBottom: 16 }}>
-              <div className="card-head">
-                <div className="card-title">{exercise.exerciseName}</div>
-                <span className="chip">{exercise.executionGuidance}</span>
-              </div>
-              {exercise.notes && (
-                <p style={{ color: "var(--muted)", fontSize: 13, marginBottom: 10 }}>{exercise.notes}</p>
-              )}
-              <table>
-                <thead>
-                  <tr><th>Set</th><th>Reps</th><th>Weight</th></tr>
-                </thead>
-                <tbody>
-                  {exercise.sets.map((set) => (
-                    <tr key={set.setNumber}>
-                      <td>{set.setNumber}</td>
-                      <td>{set.reps}</td>
-                      <td>{set.weightKg} kg</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ))}
+          <div style={{ display: "flex", flexDirection: "column", gap: 24, marginTop: 16 }}>
+            {workout.exercises.map((exercise, i) => {
+              const notesList = exercise.notes 
+                ? exercise.notes.split('\n').map(n => n.trim()).filter(Boolean)
+                : [];
+              
+              if (exercise.technique && exercise.technique !== 'NO_TECHNIQUE') {
+                notesList.push(exercise.executionGuidance);
+              }
+
+              return (
+                <div key={i} style={{ paddingLeft: 16 }}>
+                  <div style={{ fontWeight: 600, fontSize: 18, color: "var(--ink)", marginBottom: 8 }}>
+                    {i + 1}. {exercise.exerciseName}
+                  </div>
+                  
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, paddingLeft: 16 }}>
+                    <div style={{ fontSize: 15, color: "var(--muted)" }}>
+                      <span style={{ fontWeight: 600 }}>Muscles:</span> {exercise.targetMuscles || "Not specified"}
+                    </div>
+                    
+                    <div style={{ fontSize: 15, color: "var(--muted)" }}>
+                      <span style={{ fontWeight: 600 }}>Weekly Volume:</span> {exercise.weeklyVolume} sets/week
+                    </div>
+
+                    {notesList.length > 0 && (
+                      <div style={{ fontSize: 15, color: "var(--muted)" }}>
+                        <span style={{ fontWeight: 600 }}>Orientations:</span>
+                        <ul style={{ margin: "4px 0 0 0", paddingLeft: 24, listStyleType: "circle" }}>
+                          {notesList.map((note, idx) => (
+                            <li key={idx}>{note}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </>
       )}
     </>
