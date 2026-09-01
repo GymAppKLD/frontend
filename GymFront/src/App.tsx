@@ -4,19 +4,18 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import Layout from "./layout/Layout";
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
-import Library from "./pages/Exercises/Library";
-import Create from "./pages/Exercises/Create";
-import Progress from "./pages/Exercises/Progress";
+import Dashboard from "./pages/Dashboard";
 import LogWorkout from "./pages/Workouts/LogWorkout";
 import WorkoutDetails from "./pages/Workouts/WorkoutDetails";
 import WorkoutsList from "./pages/Workouts/WorkoutsList";
-import Dashboard from "./pages/Dashboard";
-import History from "./pages/History";
+import Library from "./pages/Exercises/Library";
+import Create from "./pages/Exercises/Create";
+import Progress from "./pages/Exercises/Progress";
 import ProgressOverview from "./pages/Progress";
-import Settings from "./pages/Settings";
 import Goals from "./pages/Goals/Goals";
 import CreateGoal from "./pages/Goals/CreateGoal";
 import GoalDetails from "./pages/Goals/GoalDetails";
+import Settings from "./pages/Settings";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -44,7 +43,6 @@ function App() {
               <Route path="/exercises" element={<Library />} />
               <Route path="/exercises/create" element={<Create />} />
               <Route path="/exercises/:id/progress" element={<Progress />} />
-              <Route path="/history" element={<History />} />
               <Route path="/progress" element={<ProgressOverview />} />
               <Route path="/goals" element={<Goals />} />
               <Route path="/goals/create" element={<CreateGoal />} />

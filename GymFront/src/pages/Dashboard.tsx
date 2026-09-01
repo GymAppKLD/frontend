@@ -171,9 +171,6 @@ export default function Dashboard() {
           <h1 className="page-title">Dashboard</h1>
           <p className="page-sub">Track your performance and progression</p>
         </div>
-        <button className="btn btn-primary" onClick={() => navigate("/workouts/log")}>
-          + Log Workout
-        </button>
       </div>
 
       {loading && !stats && (

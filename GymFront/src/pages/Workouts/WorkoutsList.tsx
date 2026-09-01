@@ -148,8 +148,8 @@ export default function WorkoutsList() {
           <h1 className="page-title">Workouts</h1>
           <p className="page-sub">Seus templates e histórico de sessões</p>
         </div>
-        <button className="btn btn-primary" onClick={() => navigate("/workouts/log")}>
-          ▶ Iniciar Sessão
+        <button className="btn btn-primary" onClick={openCreateModal}>
+          + Criar Template
         </button>
       </div>
 
@@ -163,7 +163,6 @@ export default function WorkoutsList() {
           <div className="card">
             <div className="card-head">
               <div className="card-title">Templates Salvos</div>
-              <button className="btn btn-outline btn-sm" onClick={openCreateModal}>+ Criar Template</button>
             </div>
             {templates.length === 0 ? (
               <p style={{ color: "var(--muted)", marginTop: 12 }}>Nenhum template salvo.</p>

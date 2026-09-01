@@ -3,14 +3,13 @@ import { NavLink } from "react-router-dom";
 interface NavItem {
   to: string;
   label: string;
-  icon: string; // SVG path(s) content
+  icon: string;
 }
 
 const MAIN_NAV: NavItem[] = [
   { to: "/", label: "Dashboard", icon: '<rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/>' },
   { to: "/workouts", label: "Workouts", icon: '<path d="M6.5 6.5l11 11M4 8l4-4 2 2-4 4-2-2zm10 10l4-4 2 2-4 4-2-2zM9 9l2 2m2 2l2 2"/>' },
   { to: "/exercises", label: "Exercises", icon: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>' },
-  { to: "/history", label: "History", icon: '<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/>' },
   { to: "/progress", label: "Progress", icon: '<path d="M3 17l5-5 4 4 8-9"/><path d="M14 7h6v6"/>' },
   { to: "/goals", label: "Goals", icon: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>' },
 ];
