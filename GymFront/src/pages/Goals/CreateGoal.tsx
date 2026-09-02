@@ -20,12 +20,12 @@ export default function CreateGoal() {
         setExercises(list);
         if (list.length > 0) setExerciseId(list[0].id);
       })
-      .catch(() => setError("Não foi possível carregar os exercícios."));
+      .catch(() => setError("Failed to load exercises."));
   }, []);
 
   const submit = () => {
-    if ( !exerciseId || !targetWeightKg || !targetReps) {
-      setError("Preencha exercício, peso e reps alvo.");
+    if (!exerciseId || !targetWeightKg || !targetReps) {
+      setError("Please fill all required fields.");
       return;
     }
     setSaving(true);
@@ -37,76 +37,77 @@ export default function CreateGoal() {
       targetDate: targetDate || null,
     })
       .then(() => navigate("/goals"))
-      .catch(() => setError("Não foi possível criar a meta."))
+      .catch(() => setError("Failed to create goal."))
       .finally(() => setSaving(false));
   };
 
   return (
-    <>
+    <div style={{ maxWidth: 640, margin: "0 auto" }}>
       <div className="back-link" onClick={() => navigate("/goals")}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M19 12H5M12 19l-7-7 7-7" />
         </svg>
-        Goals
+        GOALS
       </div>
 
-      <div className="page-head">
+      <div className="page-head" style={{ marginBottom: 32 }}>
         <div>
-          <h1 className="page-title">Create Performance Goal</h1>
+          <h1 className="page-title">NEW TARGET</h1>
+          <p className="page-sub">ESTABLISH PERFORMANCE OBJECTIVE</p>
         </div>
       </div>
 
-      <div className="card" style={{ maxWidth: 560 }}>
-        
-
+      <div className="card" style={{ padding: 32 }}>
         <div className="field">
-          <label>Exercise</label>
-          <select value={exerciseId} onChange={(e) => setExerciseId(e.target.value)}>
-            {exercises.map((ex) => (
-              <option key={ex.id} value={ex.id}>
-                {ex.name}
-              </option>
+          <label>TARGET MODULE (EXERCISE)</label>
+          <select value={exerciseId} onChange={(e) => setExerciseId(e.target.value)} style={{ textTransform: "uppercase" }}>
+            {exercises.map((e) => (
+              <option key={e.id} value={e.id}>{e.name} ({e.muscleGroup})</option>
             ))}
           </select>
         </div>
 
         <div className="field-row">
-          <div className="field">
-            <label>Target weight (kg)</label>
+          <div className="field" style={{ flex: 1 }}>
+            <label>TARGET LOAD (KG)</label>
             <input
               type="number"
+              placeholder="e.g. 100.0"
               value={targetWeightKg}
               onChange={(e) => setTargetWeightKg(e.target.value)}
-              placeholder="100"
+              className="score-input"
+              style={{ background: "var(--faint)", textAlign: "left", padding: "12px 16px" }}
             />
           </div>
-          <div className="field">
-            <label>Target reps</label>
+          <div className="field" style={{ flex: 1 }}>
+            <label>TARGET REPS</label>
             <input
               type="number"
+              placeholder="e.g. 5"
               value={targetReps}
               onChange={(e) => setTargetReps(e.target.value)}
-              placeholder="5"
+              className="score-input"
+              style={{ background: "var(--faint)", textAlign: "left", padding: "12px 16px" }}
             />
           </div>
         </div>
 
-        <div className="field">
-          <label>Target date (optional)</label>
-          <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} />
+        <div className="field" style={{ marginBottom: 40 }}>
+          <label>DEADLINE (OPTIONAL)</label>
+          <input
+            type="date"
+            value={targetDate}
+            onChange={(e) => setTargetDate(e.target.value)}
+            style={{ color: "var(--muted)", fontFamily: "var(--mono)" }}
+          />
         </div>
 
-        {error && <p style={{ color: "var(--pink)" }}>{error}</p>}
+        {error && <p style={{ color: "var(--danger)", marginBottom: 24, fontSize: 13, fontFamily: "var(--mono)", background: "var(--danger-glow)", padding: 12, borderRadius: 4 }}>[ ERR: {error} ]</p>}
 
-        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 6 }}>
-          <button className="btn btn-ghost" onClick={() => navigate("/goals")}>
-            Cancel
-          </button>
-          <button className="btn btn-primary" onClick={submit}>
-            {saving ? "Creating..." : "Create Goal"}
-          </button>
-        </div>
+        <button className="btn btn-primary" onClick={submit} disabled={saving} style={{ width: "100%", padding: 16, fontSize: 14 }}>
+          {saving ? "SAVING..." : "SAVE"}
+        </button>
       </div>
-    </>
+    </div>
   );
 }

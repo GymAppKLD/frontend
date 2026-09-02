@@ -18,7 +18,7 @@ export interface ExerciseProgressDTO {
   latestReps: number;
   bestWeightKg: number;
   bestReps: number;
-  totalReps: number;
+  estimated1Rm: number;
   progressPct: number;
   points: ProgressPointDTO[];
   sessions: SessionSummaryDTO[];
@@ -38,12 +38,13 @@ export interface DashboardStatsDTO {
   averageLoadKg: number;
   overallProgressPct: number;
   priorityExercises: PriorityExerciseDTO[];
-  setsLoggedThisWeek: number;
+  weeklyVolumePerMuscle: Record<string, number>;
 }
 
-export interface MonthlyVolumeDTO {
-  month: string;
-  volumeKg: number;
+export interface WeeklyVolumeDTO {
+  week: string;
+  muscleGroup: string;
+  volumeSets: number;
 }
 
 export interface ExerciseProgressSummaryDTO {
@@ -53,6 +54,6 @@ export interface ExerciseProgressSummaryDTO {
 }
 
 export interface ProgressOverviewDTO {
-  monthlyVolume: MonthlyVolumeDTO[];
+  weeklyVolume: WeeklyVolumeDTO[];
   exercises: ExerciseProgressSummaryDTO[];
 }

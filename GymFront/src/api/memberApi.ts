@@ -24,6 +24,12 @@ export async function updateMember(
 
 export async function fetchDashboardStats(): Promise<DashboardStatsDTO> {
   const res = await fetch(`${API_BASE_URL}/members/me/dashboard-stats`, { headers: getAuthHeaders() });
+  if (res.status === 401 || res.status === 403) {
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("auth_user");
+    window.location.href = "/login";
+    throw new Error("Unauthorized");
+  }
   if (!res.ok) throw new Error("Failed to fetch dashboard stats");
   return res.json();
 }

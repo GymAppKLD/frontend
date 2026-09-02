@@ -91,10 +91,32 @@ export async function updateExerciseNote(
       body: JSON.stringify({ note }),
     }
   );
+  if (!response.ok) throw new Error("Failed to update note");
+}
 
-  if (!response.ok) {
-    throw new Error("Failed to update note");
-  }
+export async function updateExerciseLogNotes(
+  workoutId: string,
+  workoutExerciseId: string,
+  logNotes: string
+): Promise<void> {
+  const response = await fetch(
+    `${API_BASE_URL}/workouts/${workoutId}/exercises/${workoutExerciseId}/log-notes`,
+    {
+      method: "PATCH",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ logNotes }),
+    }
+  );
+  if (!response.ok) throw new Error("Failed to update log notes");
+}
+
+export async function reorderExercises(workoutId: string, orderedIds: string[]): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/workouts/${workoutId}/reorder`, {
+    method: "PATCH",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(orderedIds),
+  });
+  if (!response.ok) throw new Error("Failed to reorder");
 }
 
 export async function completeWorkout(workoutId: string): Promise<void> {
@@ -159,6 +181,7 @@ export async function addSet(
   );
 
   if (!response.ok) {
-    throw new Error("Failed to add set");
+    const txt = await response.text().catch(() => "");
+    try { const j = JSON.parse(txt); throw new Error(j.message || txt || `HTTP ${response.status}`); } catch { throw new Error(txt || `HTTP ${response.status}`); }
   }
 }

@@ -1,117 +1,102 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { fetchGoalById } from "../../api/goalApi";
 import { goalProgressFactory } from "../../utils/goalProgress";
 import type { Goal } from "../../types/goal";
-
-function Donut({ pct }: { pct: number }) {
-  const size = 150;
-  const thickness = 14;
-  const r = (size - thickness) / 2;
-  const c = size / 2;
-  const circ = 2 * Math.PI * r;
-  const len = circ * (pct / 100);
-
-  return (
-    <div className="donut-wrap" style={{ width: size, height: size }}>
-      <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size}>
-        <circle
-          cx={c}
-          cy={c}
-          r={r}
-          fill="none"
-          stroke="var(--border)"
-          strokeWidth={thickness}
-        />
-        <circle
-          cx={c}
-          cy={c}
-          r={r}
-          fill="none"
-          stroke="var(--purple)"
-          strokeWidth={thickness}
-          strokeDasharray={`${len} ${circ - len}`}
-          strokeLinecap="round"
-          transform={`rotate(-90 ${c} ${c})`}
-        />
-      </svg>
-      <div className="donut-center">
-        <div className="v">{pct}%</div>
-        <div className="l">of target</div>
-      </div>
-    </div>
-  );
-}
 
 export default function GoalDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [goal, setGoal] = useState<Goal | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
     fetchGoalById(id)
       .then(setGoal)
-      .catch(() => setError("Meta não encontrada."));
+      .catch(() => setError("Goal not found."))
+      .finally(() => setLoading(false));
   }, [id]);
 
   return (
-    <>
+    <div style={{ maxWidth: 800, margin: "0 auto", paddingBottom: 64 }}>
       <div className="back-link" onClick={() => navigate("/goals")}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M19 12H5M12 19l-7-7 7-7" />
         </svg>
-        Goals
+        GOALS
       </div>
 
-      {error && <div className="card">{error}</div>}
+      {loading && <div style={{ color: "var(--muted)", margin: "40px 0", fontFamily: "var(--mono)" }}>[ LOADING TARGET DATA... ]</div>}
+      {error && <div style={{ color: "var(--danger)", margin: "40px 0", fontFamily: "var(--mono)" }}>[ ERR: {error} ]</div>}
 
       {goal && (
         <>
-          <div className="page-head">
+          <div className="page-head" style={{ borderBottom: "none", paddingBottom: 0, marginBottom: 32 }}>
             <div>
-              <h1 className="page-title">{goal.exerciseName} Goal</h1>
-              <p className="page-sub">
-                Reach {goal.targetWeightKg} kg × {goal.targetReps}
-              </p>
+              <div style={{ fontSize: 13, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.1em", marginBottom: 8 }}>TARGET DETAIL</div>
+              <h1 className="page-title">{goal.exerciseName}</h1>
             </div>
           </div>
 
-          <div
-            className="card"
-            style={{ marginBottom: 18, display: "flex", alignItems: "center", gap: 26, flexWrap: "wrap" }}
-          >
-            <Donut pct={goalProgressFactory().calculate(goal)} />
-            <div style={{ flex: 1, minWidth: 200 }}>
-              <div className="settings-row">
-                <span className="label">Current</span>
-                <span className="value mono-num" style={{ color: "var(--ink)" }}>
-                  {goal.currentWeightKg != null
-                    ? `${goal.currentWeightKg} kg × ${goal.currentReps}`
-                    : "Not logged yet"}
-                </span>
+          <div className="card" style={{ borderTop: "4px solid var(--accent)", marginBottom: 32, padding: 32 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 48 }}>
+              <div>
+                <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.05em", marginBottom: 12 }}>TARGET SPEC</div>
+                <div className="score-cell active" style={{ fontSize: 32, padding: "12px 24px" }}>{goal.targetWeightKg}kg × {goal.targetReps}</div>
               </div>
-              <div className="settings-row">
-                <span className="label">Target</span>
-                <span className="value mono-num" style={{ color: "var(--ink)" }}>
-                  {goal.targetWeightKg} kg × {goal.targetReps}
-                </span>
-              </div>
-              <div className="settings-row">
-                <span className="label">Started</span>
-                <span className="value">{new Date(goal.createdAt).toLocaleDateString()}</span>
-              </div>
-              {goal.targetDate && (
-                <div className="settings-row">
-                  <span className="label">Target date</span>
-                  <span className="value">{new Date(goal.targetDate).toLocaleDateString()}</span>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.05em", marginBottom: 12 }}>CURRENT STATE</div>
+                <div className="score-cell" style={{ fontSize: 32, padding: "12px 24px" }}>
+                  {goal.currentWeightKg != null ? `${goal.currentWeightKg}kg × ${goal.currentReps}` : "--"}
                 </div>
-              )}
+              </div>
+            </div>
+
+            {(() => {
+              const pct = goalProgressFactory().calculate(goal);
+              const isDone = pct >= 100;
+              return (
+                <>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontFamily: "var(--mono)", fontWeight: 700, color: isDone ? "var(--success)" : "var(--accent)", marginBottom: 12 }}>
+                    <span style={{ letterSpacing: "0.1em" }}>PROGRESSION</span>
+                    <span style={{ fontSize: 14 }}>{pct.toFixed(1)}%</span>
+                  </div>
+                  <div style={{ background: "var(--faint)", height: 16, borderRadius: 8, overflow: "hidden" }}>
+                    <div style={{ 
+                      height: "100%", 
+                      width: `${Math.min(pct, 100)}%`, 
+                      background: isDone ? "var(--success)" : "var(--accent)",
+                      boxShadow: isDone ? "0 0 12px var(--success-glow)" : "0 0 12px var(--accent-glow)",
+                      transition: "width 0.5s ease"
+                    }} />
+                  </div>
+                  {isDone && (
+                    <div style={{ marginTop: 24, color: "var(--success)", fontSize: 14, fontWeight: 800, fontFamily: "var(--mono)", textAlign: "center", textTransform: "uppercase", letterSpacing: "0.2em", background: "var(--success-glow)", padding: 12, borderRadius: 4 }}>
+                      [ TARGET ACQUIRED ]
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </div>
+
+          <div className="card" style={{ padding: 32 }}>
+            <h3 style={{ fontSize: 13, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--muted)", fontWeight: 700, marginBottom: 24, fontFamily: "var(--mono)" }}>METADATA</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px dashed var(--border)", paddingBottom: 12 }}>
+                <span style={{ color: "var(--muted)", fontSize: 13, fontFamily: "var(--mono)", letterSpacing: "0.05em" }}>INITIALIZED</span>
+                <span style={{ color: "var(--ink)", fontSize: 13, fontWeight: 700, fontFamily: "var(--mono)" }}>{new Date(goal.createdAt).toLocaleDateString()}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px dashed var(--border)", paddingBottom: 12 }}>
+                <span style={{ color: "var(--muted)", fontSize: 13, fontFamily: "var(--mono)", letterSpacing: "0.05em" }}>DEADLINE</span>
+                <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "var(--mono)", color: goal.targetDate ? "var(--ink)" : "var(--muted)" }}>{goal.targetDate ? new Date(goal.targetDate).toLocaleDateString() : "NONE"}</span>
+              </div>
             </div>
           </div>
         </>
       )}
-    </>
+    </div>
   );
 }

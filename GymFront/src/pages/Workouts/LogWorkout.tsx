@@ -3,9 +3,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { 
   addSet, 
   completeWorkout, 
-  updateExerciseNote,
-  fetchWorkoutById,
-  startFromTemplate
+  updateExerciseLogNotes,
+  fetchWorkoutById
 } from "../../api/workoutApi";
 import { fetchAllExercises, fetchPreviousNote } from "../../api/exerciseApi";
 import type { Exercise } from "../../types/exercise";
@@ -15,44 +14,35 @@ import type { WorkoutResponse } from "../../types/workout";
 export default function LogWorkout() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const templateIdParam = searchParams.get("templateId");
+  const sessionIdParam = searchParams.get("sessionId");
 
-  // Reference Data
   const [availableExercises, setAvailableExercises] = useState<Exercise[]>([]);
-  
-  // Active Session State
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [activeSession, setActiveSession] = useState<WorkoutResponse | null>(null);
   const [finishing, setFinishing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Local state for Sets & Notes being typed in the session
   const [setInputs, setSetInputs] = useState<Record<string, { weightKg: string, reps: string }>>({});
-  const [noteInputs, setNoteInputs] = useState<Record<string, string>>({});
+  const [sessionNoteInputs, setSessionNoteInputs] = useState<Record<string, string>>({});
   const [previousNotes, setPreviousNotes] = useState<Record<string, PreviousNote | null>>({});
 
   useEffect(() => {
-    if (!templateIdParam) {
-      setError("Nenhum template selecionado para iniciar a sessão.");
+    if (!sessionIdParam) {
+      setError("Nenhum sessão selecionada.");
       setLoading(false);
       return;
     }
 
-    // Load exercises reference
     fetchAllExercises()
       .then(list => setAvailableExercises(list))
-      .catch(() => console.error("Could not load exercises reference"));
+      .catch(console.error);
 
-    // Start session
-    startFromTemplate(templateIdParam)
-      .then(res => {
-        setSessionId(res.id);
-        return refreshSession(res.id);
-      })
-      .catch(() => setError("Não foi possível iniciar a sessão a partir deste template."))
+    setSessionId(sessionIdParam);
+    refreshSession(sessionIdParam)
+      .catch(() => setError("Erro ao carregar sessão."))
       .finally(() => setLoading(false));
-  }, [templateIdParam]);
+  }, [sessionIdParam]);
 
   const refreshSession = async (id: string) => {
     try {
@@ -60,16 +50,15 @@ export default function LogWorkout() {
       setActiveSession(data);
       
       const newSetInputs = { ...setInputs };
-      const newNoteInputs = { ...noteInputs };
+      const newSessionNoteInputs = { ...sessionNoteInputs };
       
       data.exercises.forEach(ex => {
         if (!newSetInputs[ex.id]) newSetInputs[ex.id] = { weightKg: "", reps: "" };
-        if (newNoteInputs[ex.id] === undefined) newNoteInputs[ex.id] = ex.notes || "";
+        if (newSessionNoteInputs[ex.id] === undefined) newSessionNoteInputs[ex.id] = ex.logNotes || "";
       });
       setSetInputs(newSetInputs);
-      setNoteInputs(newNoteInputs);
+      setSessionNoteInputs(newSessionNoteInputs);
       
-      // Lookback query
       if (availableExercises.length > 0) {
         data.exercises.forEach(ex => {
           const baseEx = availableExercises.find(a => a.name === ex.exerciseName);
@@ -85,7 +74,6 @@ export default function LogWorkout() {
     }
   };
 
-  // Re-run lookback when availableExercises finally load (in case they loaded after the session)
   useEffect(() => {
     if (activeSession && availableExercises.length > 0) {
       activeSession.exercises.forEach(ex => {
@@ -99,10 +87,10 @@ export default function LogWorkout() {
     }
   }, [availableExercises, activeSession]);
 
-  const handleSaveNote = async (workoutExerciseId: string) => {
+  const handleSaveSessionNote = async (workoutExerciseId: string) => {
     if (!sessionId) return;
     try {
-      await updateExerciseNote(sessionId, workoutExerciseId, noteInputs[workoutExerciseId]);
+      await updateExerciseLogNotes(sessionId, workoutExerciseId, sessionNoteInputs[workoutExerciseId]);
     } catch {
       alert("Erro ao salvar nota.");
     }
@@ -111,14 +99,26 @@ export default function LogWorkout() {
   const handleLogSet = async (workoutExerciseId: string) => {
     if (!sessionId) return;
     const input = setInputs[workoutExerciseId];
-    if (!input || !input.weightKg || !input.reps) return;
+    if (!input) return;
+    const reps = Number(String(input.reps).trim());
+    const weightKg = Number(String(input.weightKg).trim());
+    if (!Number.isFinite(reps) || reps < 1) {
+      alert("Reps must be a positive integer (>=1).");
+      return;
+    }
+    if (!Number.isFinite(weightKg) || weightKg < 0) {
+      alert("Load must be a number (>= 0).");
+      return;
+    }
     
     try {
-      await addSet(sessionId, workoutExerciseId, Number(input.reps), Number(input.weightKg));
+      await addSet(sessionId, workoutExerciseId, reps, weightKg);
       setSetInputs(prev => ({ ...prev, [workoutExerciseId]: { weightKg: "", reps: "" }}));
       await refreshSession(sessionId);
-    } catch {
-      alert("Erro ao salvar série.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : (err as { message?: string })?.message;
+      const serverMsg = msg && msg.includes("weightKg") ? "Weight must be >= 0 (" + msg + ")" : (msg && msg.includes("reps") ? "Reps must be > 0 (" + msg + ")" : msg);
+      alert(serverMsg ? "Erro ao salvar série: " + serverMsg : "Erro ao salvar série.");
     }
   };
 
@@ -134,133 +134,166 @@ export default function LogWorkout() {
     }
   };
 
-  if (loading) {
-    return <div style={{ padding: 40, textAlign: "center", color: "var(--muted)" }}>Iniciando sessão...</div>;
-  }
-
-  if (error) {
-    return (
-      <div style={{ padding: 40, textAlign: "center" }}>
-        <p style={{ color: "var(--pink)", marginBottom: 16 }}>{error}</p>
-        <button className="btn btn-outline" onClick={() => navigate("/workouts")}>Voltar para Workouts</button>
-      </div>
-    );
-  }
+  if (loading) return <div style={{ padding: 40, textAlign: "center", color: "var(--muted)", fontFamily: "monospace" }}>[ INITIATING SEQUENCE... ]</div>;
+  
+  if (error) return (
+    <div style={{ padding: 40, textAlign: "center", fontFamily: "monospace" }}>
+      <p style={{ color: "var(--pink)", marginBottom: 24 }}>[ ERR: {error} ]</p>
+      <button onClick={() => navigate("/workouts")} style={{ background: "transparent", border: "1px solid var(--border)", color: "var(--ink)", padding: "12px 24px", cursor: "pointer", textTransform: "uppercase" }}>ABORT</button>
+    </div>
+  );
 
   return (
-    <div style={{ maxWidth: 800, margin: "0 auto" }}>
-      <div className="card" style={{ padding: "32px 24px" }}>
-        <div style={{ paddingBottom: 24, borderBottom: "1px dashed var(--border)", marginBottom: 32, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div>
-            <div style={{ fontWeight: 800, fontSize: 24, color: "var(--ink)" }}>Treino Ativo: {activeSession?.name}</div>
-            <div style={{ fontSize: 14, color: "var(--muted)", marginTop: 4 }}>Data: {new Date().toLocaleDateString()}</div>
-          </div>
-          <span className="chip" style={{ background: "var(--teal-light)", color: "var(--teal)", padding: "6px 12px" }}>● EM ANDAMENTO</span>
+    <div style={{ maxWidth: 760, margin: "0 auto", paddingBottom: 64 }}>
+      
+      {/* HEADER */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 48, marginTop: 16, borderBottom: "1px solid var(--border)", paddingBottom: 24 }}>
+        <div>
+          <div style={{ fontSize: 13, color: "var(--muted)", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: 8 }}>SESSION_ID: {sessionId?.split('-')[0]}</div>
+          <h1 style={{ fontSize: 40, fontWeight: 800, color: "var(--ink)", letterSpacing: "-0.04em", lineHeight: 1 }}>{activeSession?.name}</h1>
         </div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 12px", background: "var(--success-glow)", color: "var(--success)", border: "1px solid var(--success)", borderRadius: 4, fontSize: 12, fontWeight: 700, letterSpacing: "0.1em" }}>
+            <span style={{ display: "block", width: 8, height: 8, borderRadius: "50%", background: "var(--success)", boxShadow: "0 0 8px var(--success)" }}></span>
+            ACTIVE
+          </div>
+          <div style={{ fontSize: 13, color: "var(--muted)", fontFamily: "monospace" }}>{new Date().toLocaleDateString()}</div>
+        </div>
+      </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 48 }}>
-          {activeSession?.exercises.map((ex, i) => {
-            const prev = previousNotes[ex.id];
-            
-            return (
-              <div key={ex.id}>
-                <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 12, color: "var(--ink)" }}>
-                  {i + 1}. {ex.exerciseName}
+      {/* EXERCISES */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 48 }}>
+        {activeSession?.exercises.map((ex, i) => {
+          const prev = previousNotes[ex.id];
+          
+          return (
+            <div key={ex.id} style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden" }}>
+              
+              {/* EXERCISE HEADER */}
+              <div style={{ padding: "20px 24px", background: "var(--faint)", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: "var(--ink)" }}>{String(i + 1).padStart(2, '0')} - {ex.exerciseName}</div>
                 </div>
-
                 {prev ? (
-                  <div style={{ fontSize: 14, color: "var(--muted)", marginBottom: 16, display: "flex", alignItems: "center", gap: 8, background: "var(--bg)", padding: "8px 12px", borderRadius: 8 }}>
-                    <span>🗓️ Último ({new Date(prev.date).toLocaleDateString()} • há {prev.daysElapsed}d):</span>
-                    <span style={{ fontWeight: 700, color: "var(--ink)" }}>
-                      {prev.bestWeightKg !== null ? `${prev.bestWeightKg}kg - ${prev.setsCount}x${prev.bestReps}` : 'Apenas nota'}
-                    </span>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 11, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>PREVIOUS ({prev.daysElapsed}D)</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: "var(--muted)", fontFamily: "monospace" }}>
+                      {prev.bestWeightKg !== null ? `${prev.bestWeightKg}kg x ${prev.bestReps}` : '--'}
+                    </div>
                   </div>
                 ) : (
-                  <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 16, fontStyle: "italic" }}>
-                    Nenhum histórico recente encontrado.
+                  <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "monospace" }}>NO HISTORY</div>
+                )}
+              </div>
+
+              <div style={{ padding: "24px" }}>
+                {ex.notes && (
+                  <div style={{ marginBottom: 16, padding: "12px 16px", background: "var(--faint)", borderRadius: 4, borderLeft: "2px solid var(--accent)", fontSize: 13 }}>
+                    <div style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.1em", marginBottom: 4 }}>ORIENTATION</div>
+                    <div>{ex.notes}</div>
                   </div>
                 )}
-
-                <div className="field-row" style={{ marginBottom: 20 }}>
+                <div style={{ marginBottom: 24 }}>
                   <input 
-                    placeholder="Nota qualitativa / Orientações..."
-                    value={noteInputs[ex.id] || ""}
-                    onChange={(e) => setNoteInputs(prevData => ({ ...prevData, [ex.id]: e.target.value }))}
-                    onBlur={() => handleSaveNote(ex.id)}
-                    style={{ fontSize: 14, background: "var(--card)", border: "1px solid var(--border)" }}
+                    className="score-input"
+                    placeholder="Session note (e.g. slept bad, different time)..."
+                    value={sessionNoteInputs[ex.id] || ""}
+                    onChange={(e) => setSessionNoteInputs(prev => ({ ...prev, [ex.id]: e.target.value }))}
+                    onBlur={() => handleSaveSessionNote(ex.id)}
+                    style={{ textAlign: "left", fontSize: 14, color: "var(--ink)", borderBottom: "1px dashed var(--border)", paddingBottom: 8 }}
                   />
                 </div>
 
-                <table style={{ marginBottom: 12 }}>
+                {/* LOGGING TABLE */}
+                <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: "0 8px" }}>
                   <thead>
                     <tr>
-                      <th style={{ width: 60, fontSize: 12, color: "var(--muted)" }}>SET</th>
-                      <th style={{ fontSize: 12, color: "var(--muted)" }}>CARGA(KG)</th>
-                      <th style={{ fontSize: 12, color: "var(--muted)" }}>REPS</th>
-                      <th style={{ width: 60, textAlign: "center", fontSize: 12, color: "var(--muted)" }}>CHECK</th>
+                      <th style={{ textAlign: "center", color: "var(--muted)", fontSize: 11, paddingBottom: 8 }}>SET</th>
+                      <th style={{ textAlign: "center", color: "var(--muted)", fontSize: 11, paddingBottom: 8 }}>LOAD (KG)</th>
+                      <th style={{ textAlign: "center", color: "var(--muted)", fontSize: 11, paddingBottom: 8 }}>REPS</th>
+                      <th style={{ width: 80 }}></th>
                     </tr>
                   </thead>
                   <tbody>
+                    {/* COMPLETED SETS */}
                     {ex.sets.map((set) => (
                       <tr key={set.setNumber}>
-                        <td style={{ fontWeight: 600, color: "var(--muted)" }}>{set.setNumber}</td>
-                        <td><div className="chip" style={{ fontSize: 15 }}>{set.weightKg}</div></td>
-                        <td><div className="chip" style={{ fontSize: 15 }}>{set.reps}</div></td>
-                        <td style={{ textAlign: "center", color: "var(--teal)", fontSize: 18 }}>✓</td>
+                        <td style={{ textAlign: "center", color: "var(--muted)", fontWeight: 700 }}>{set.setNumber}</td>
+                        <td style={{ textAlign: "center" }}><div className="score-cell success">{set.weightKg.toFixed(1)}</div></td>
+                        <td style={{ textAlign: "center" }}><div className="score-cell success">{set.reps}</div></td>
+                        <td style={{ textAlign: "center" }}>
+                          <div style={{ display: "inline-flex", padding: "8px", color: "var(--success)" }}>
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                          </div>
+                        </td>
                       </tr>
                     ))}
                     
+                    {/* ACTIVE INPUT ROW */}
                     <tr>
-                      <td style={{ color: "var(--faint)", fontWeight: 600 }}>{ex.sets.length + 1}</td>
-                      <td>
-                        <input 
-                          type="number" 
-                          placeholder="0.0" 
-                          value={setInputs[ex.id]?.weightKg || ""}
-                          onChange={(e) => setSetInputs(p => ({ ...p, [ex.id]: { ...p[ex.id], weightKg: e.target.value } }))}
-                          style={{ padding: "8px 12px", height: 40, fontSize: 16, width: 100 }}
-                        />
+                      <td style={{ textAlign: "center", color: "var(--accent)", fontWeight: 800 }}>{ex.sets.length + 1}</td>
+                      <td style={{ textAlign: "center" }}>
+                        <div className="score-cell active" style={{ padding: 0 }}>
+                          <input 
+                            type="number" 
+                            className="score-input"
+                            placeholder="0.0" 
+                            value={setInputs[ex.id]?.weightKg || ""}
+                            onChange={(e) => setSetInputs(p => ({ ...p, [ex.id]: { ...p[ex.id], weightKg: e.target.value } }))}
+                            style={{ padding: "8px 12px", width: 100 }}
+                          />
+                        </div>
                       </td>
-                      <td>
-                        <input 
-                          type="number" 
-                          placeholder="0" 
-                          value={setInputs[ex.id]?.reps || ""}
-                          onChange={(e) => setSetInputs(p => ({ ...p, [ex.id]: { ...p[ex.id], reps: e.target.value } }))}
-                          style={{ padding: "8px 12px", height: 40, fontSize: 16, width: 80 }}
-                        />
+                      <td style={{ textAlign: "center" }}>
+                        <div className="score-cell active" style={{ padding: 0 }}>
+                          <input 
+                            type="number" 
+                            className="score-input"
+                            placeholder="0" 
+                            value={setInputs[ex.id]?.reps || ""}
+                            onChange={(e) => setSetInputs(p => ({ ...p, [ex.id]: { ...p[ex.id], reps: e.target.value } }))}
+                            style={{ padding: "8px 12px", width: 80 }}
+                          />
+                        </div>
                       </td>
                       <td style={{ textAlign: "center" }}>
                         <button 
-                          className="btn btn-primary" 
-                          style={{ padding: "0", height: 40, width: 40, minWidth: "auto", display: "flex", justifyContent: "center", alignItems: "center" }}
                           onClick={() => handleLogSet(ex.id)}
+                          style={{ background: "var(--accent)", color: "var(--bg)", border: "none", width: 40, height: 40, borderRadius: 4, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
                         >
-                          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                          </svg>
+                          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         </button>
                       </td>
                     </tr>
                   </tbody>
                 </table>
               </div>
-            );
-          })}
-
-          {activeSession && activeSession.exercises.length > 0 && (
-            <div style={{ marginTop: 24, paddingTop: 32, borderTop: "1px solid var(--border)" }}>
-              <button 
-                className="btn btn-primary" 
-                style={{ width: "100%", padding: 18, fontSize: 16, fontWeight: 700 }}
-                onClick={handleFinishSession}
-                disabled={finishing}
-              >
-                {finishing ? "FINALIZANDO..." : "✔ FINALIZAR & SALVAR SESSÃO"}
-              </button>
             </div>
-          )}
-        </div>
+          );
+        })}
+
+        {activeSession && activeSession.exercises.length > 0 && (
+          <button 
+            onClick={handleFinishSession}
+            disabled={finishing}
+            style={{ 
+              background: finishing ? "var(--faint)" : "var(--ink)", 
+              color: finishing ? "var(--muted)" : "var(--bg)", 
+              border: "none", 
+              padding: "24px", 
+              borderRadius: 8, 
+              fontSize: 18, 
+              fontWeight: 800, 
+              letterSpacing: "0.05em",
+              textTransform: "uppercase",
+              cursor: finishing ? "not-allowed" : "pointer",
+              boxShadow: finishing ? "none" : "0 8px 24px rgba(0,0,0,0.4)",
+              transition: "all 0.2s ease"
+            }}
+            >
+              {finishing ? "SAVING..." : "SAVE SESSION"}
+            </button>
+        )}
       </div>
     </div>
   );

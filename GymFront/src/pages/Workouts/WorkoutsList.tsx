@@ -7,7 +7,9 @@ import {
   fetchWorkoutById, 
   addWorkoutExercise, 
   removeWorkoutExercise,
-  updateExerciseNote
+  updateExerciseNote,
+  reorderExercises,
+  startFromTemplate
 } from "../../api/workoutApi";
 import { fetchAllExercises } from "../../api/exerciseApi";
 import type { WorkoutSummary, WorkoutResponse } from "../../types/workout";
@@ -109,6 +111,24 @@ export default function WorkoutsList() {
     }
   };
 
+  const handleMove = async (idx: number, dir: number) => {
+    if (!activeTemplate || !editingTemplateId) return;
+    const ids = activeTemplate.exercises.map(e => e.id);
+    const target = idx + dir;
+    if (target < 0 || target >= ids.length) return;
+    const next = [...ids];
+    const [moved] = next.splice(idx, 1);
+    next.splice(target, 0, moved);
+    setActiveTemplate({ ...activeTemplate, exercises: next.map(id => activeTemplate.exercises.find(e => e.id === id)!) } as WorkoutResponse);
+    try {
+      await reorderExercises(editingTemplateId, next);
+      const data = await fetchWorkoutById(editingTemplateId);
+      setActiveTemplate(data);
+    } catch {
+      alert("Failed to reorder");
+    }
+  };
+
   const handleRemoveExercise = async (workoutExerciseId: string) => {
     if (!editingTemplateId) return;
     try {
@@ -130,6 +150,15 @@ export default function WorkoutsList() {
     }
   };
 
+  const handleStartSession = async (templateId: string) => {
+    try {
+      const res = await startFromTemplate(templateId);
+      navigate(`/workouts/log?sessionId=${res.id}`);
+    } catch {
+      alert("Failed to start session.");
+    }
+  };
+
   const handleDeleteTemplate = async (id: string) => {
     if (!confirm("Are you sure you want to delete this template?")) return;
     try {
@@ -143,47 +172,63 @@ export default function WorkoutsList() {
 
   return (
     <>
-      <div className="page-head">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 48, marginTop: 16 }}>
         <div>
-          <h1 className="page-title">Workouts</h1>
-          <p className="page-sub">Seus templates e histórico de sessões</p>
+          <h1 style={{ fontSize: 32, fontWeight: 800, color: "var(--ink)", letterSpacing: "-0.03em", textTransform: "uppercase" }}>WORKOUTS</h1>
+          <div style={{ width: 40, height: 4, background: "var(--accent)", marginTop: 8 }}></div>
         </div>
-        <button className="btn btn-primary" onClick={openCreateModal}>
-          + Criar Template
+        <button 
+          onClick={openCreateModal}
+          style={{ background: "var(--accent)", color: "var(--bg)", border: "none", padding: "12px 24px", borderRadius: 4, fontWeight: 700, fontSize: 14, cursor: "pointer", textTransform: "uppercase", letterSpacing: "0.05em" }}
+        >
+          + CREATE TEMPLATE
         </button>
       </div>
 
-      {loading && <div style={{ color: "var(--muted)", margin: "40px 0" }}>Loading...</div>}
-      {error && <div style={{ color: "var(--pink)", margin: "40px 0" }}>{error}</div>}
+      {loading && <div style={{ color: "var(--muted)", margin: "40px 0", fontFamily: "monospace" }}>[ LOADING SYSTEM... ]</div>}
+      {error && <div style={{ color: "var(--pink)", margin: "40px 0", fontFamily: "monospace" }}>[ ERR: {error} ]</div>}
 
       {!loading && !error && (
-        <div className="grid g-main-side" style={{ alignItems: "start" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, alignItems: "start" }}>
           
           {/* TEMPLATES LIST */}
-          <div className="card">
-            <div className="card-head">
-              <div className="card-title">Templates Salvos</div>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24, borderBottom: "1px solid var(--border)", paddingBottom: 16 }}>
+              <div style={{ width: 12, height: 12, borderRadius: 2, background: "var(--accent)" }}></div>
+              <h2 style={{ fontSize: 14, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--muted)", margin: 0, fontWeight: 700 }}>TEMPLATES</h2>
             </div>
+            
             {templates.length === 0 ? (
-              <p style={{ color: "var(--muted)", marginTop: 12 }}>Nenhum template salvo.</p>
+              <p style={{ color: "var(--muted)", fontFamily: "monospace" }}>[ NO TEMPLATES CONFIGURED ]</p>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 12 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {templates.map((w) => (
                   <div key={w.id} style={{ 
+                    background: "var(--card)",
                     border: "1px solid var(--border)", 
-                    borderRadius: 8, 
+                    borderRadius: 4, 
                     padding: 16,
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center"
                   }}>
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: 15 }}>{w.name}</div>
-                      <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 4 }}>{w.exerciseCount} exercícios</div>
+                      <div style={{ fontWeight: 700, fontSize: 18, color: "var(--ink)", textTransform: "uppercase", letterSpacing: "0.02em" }}>{w.name}</div>
+                      <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 4, fontFamily: "monospace" }}>{w.exerciseCount} MODULES</div>
                     </div>
                     <div style={{ display: "flex", gap: 8 }}>
-                      <button className="btn btn-outline btn-sm" onClick={() => openEditModal(w.id, w.name)}>Editar</button>
-                      <button className="btn btn-primary btn-sm" onClick={() => navigate(`/workouts/log?templateId=${w.id}`)}>▶ Iniciar</button>
+                      <button 
+                        onClick={() => openEditModal(w.id, w.name)}
+                        style={{ background: "transparent", border: "1px solid var(--border)", color: "var(--muted)", padding: "8px 16px", borderRadius: 4, fontWeight: 600, fontSize: 13, cursor: "pointer", textTransform: "uppercase" }}
+                      >
+                        EDIT
+                      </button>
+                      <button 
+                        onClick={() => handleStartSession(w.id)}
+                        style={{ background: "var(--accent-glow)", border: "1px solid var(--accent)", color: "var(--accent)", padding: "8px 16px", borderRadius: 4, fontWeight: 700, fontSize: 13, cursor: "pointer", textTransform: "uppercase" }}
+                      >
+                        START
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -192,26 +237,36 @@ export default function WorkoutsList() {
           </div>
 
           {/* HISTORY LIST */}
-          <div className="card">
-            <div className="card-head">
-              <div className="card-title">Histórico de Sessões</div>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24, borderBottom: "1px solid var(--border)", paddingBottom: 16 }}>
+              <div style={{ width: 12, height: 12, borderRadius: 2, background: "var(--faint)" }}></div>
+              <h2 style={{ fontSize: 14, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--muted)", margin: 0, fontWeight: 700 }}>LOG ARCHIVE</h2>
             </div>
+            
             {history.length === 0 ? (
-              <p style={{ color: "var(--muted)" }}>Nenhuma sessão registrada.</p>
+              <p style={{ color: "var(--muted)", fontFamily: "monospace" }}>[ ARCHIVE EMPTY ]</p>
             ) : (
-              <table>
-                <tbody>
-                  {history.map((w) => (
-                    <tr key={w.id} style={{ cursor: "pointer" }} onClick={() => navigate(`/workouts/${w.id}`)}>
-                      <td style={{ color: "var(--muted)", width: 100 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {history.map((w) => (
+                  <div key={w.id} onClick={() => navigate(`/workouts/${w.id}`)} style={{ 
+                    display: "flex", 
+                    justifyContent: "space-between", 
+                    padding: "16px 0", 
+                    borderBottom: "1px solid var(--border)",
+                    cursor: "pointer"
+                  }}>
+                    <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
+                      <span style={{ color: "var(--muted)", fontFamily: "monospace", fontSize: 13, minWidth: 100 }}>
                         {new Date(w.createdAt).toLocaleDateString()}
-                      </td>
-                      <td style={{ fontWeight: 600 }}>{w.name}</td>
-                      <td style={{ textAlign: "right", color: "var(--muted)" }}>{w.exerciseCount} exs</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </span>
+                      <span style={{ fontWeight: 600, color: "var(--ink)", textTransform: "uppercase" }}>{w.name}</span>
+                    </div>
+                    <span style={{ color: "var(--muted)", fontFamily: "monospace", fontSize: 13 }}>
+                      {w.exerciseCount} EXS
+                    </span>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </div>
@@ -221,82 +276,93 @@ export default function WorkoutsList() {
       {isModalOpen && (
         <div style={{
           position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-          background: "rgba(0,0,0,0.5)", zIndex: 999,
+          background: "rgba(0,0,0,0.85)", backdropFilter: "blur(4px)", zIndex: 999,
           display: "flex", justifyContent: "center", alignItems: "center", padding: 24
         }}>
-          <div className="card" style={{ width: "100%", maxWidth: 600, maxHeight: "90vh", overflowY: "auto", position: "relative" }}>
+          <div style={{ width: "100%", maxWidth: 640, maxHeight: "90vh", overflowY: "auto", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 8, padding: 32, position: "relative", boxShadow: "0 24px 48px rgba(0,0,0,0.5)" }}>
             <button 
               onClick={() => setIsModalOpen(false)} 
-              style={{ position: "absolute", top: 16, right: 16, background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "var(--muted)" }}
+              style={{ position: "absolute", top: 24, right: 24, background: "none", border: "none", fontSize: 24, cursor: "pointer", color: "var(--muted)" }}
             >
               ✕
             </button>
             
-            <h2 style={{ fontSize: 20, marginBottom: 24 }}>
-              {editingTemplateId ? "Editar Template" : "Criar Novo Template"}
+            <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 32, color: "var(--ink)", textTransform: "uppercase" }}>
+              {editingTemplateId ? "EDIT TEMPLATE" : "NEW TEMPLATE"}
             </h2>
 
             {!editingTemplateId ? (
-              <div className="field">
-                <label>Nome do Template</label>
-                <div className="field-row">
-                  <input 
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <label style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>DESIGNATION</label>
+                <div style={{ display: "flex", gap: 12 }}>
+                    <input 
                     value={templateName} 
                     onChange={(e) => setTemplateName(e.target.value)} 
-                    placeholder="Ex: Upper A" 
+                    placeholder="e.g. Upper - Push Day" 
+                    style={{ flex: 1, background: "var(--faint)", border: "1px solid var(--border)", color: "var(--ink)", padding: "12px 16px", borderRadius: 4, fontSize: 16 }}
                   />
-                  <button className="btn btn-primary" onClick={handleCreateTemplate}>Criar & Continuar</button>
+                  <button 
+                    onClick={handleCreateTemplate}
+                    style={{ background: "var(--accent)", color: "var(--bg)", border: "none", padding: "0 24px", borderRadius: 4, fontWeight: 700, cursor: "pointer", textTransform: "uppercase" }}
+                  >
+                    INITIALIZE
+                  </button>
                 </div>
               </div>
             ) : (
               <>
-                <div className="field">
-                  <label>Nome do Template</label>
-                  <input value={templateName} disabled style={{ background: "var(--bg)" }} />
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 32 }}>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>DESIGNATION</label>
+                  <input value={templateName} disabled style={{ background: "transparent", border: "none", borderBottom: "1px solid var(--border)", color: "var(--ink)", padding: "12px 0", borderRadius: 0, fontSize: 18, fontWeight: 700, textTransform: "uppercase" }} />
                 </div>
 
-                <div className="field" style={{ marginTop: 24 }}>
-                  <label>Adicionar Exercício</label>
-                  <div className="field-row">
-                    <select value={selectedExerciseId} onChange={(e) => setSelectedExerciseId(e.target.value)}>
-                      <option value="">Selecione...</option>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 32 }}>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>APPEND MODULE</label>
+                  <div style={{ display: "flex", gap: 12 }}>
+                    <select 
+                      value={selectedExerciseId} 
+                      onChange={(e) => setSelectedExerciseId(e.target.value)}
+                      style={{ flex: 1, background: "var(--faint)", border: "1px solid var(--border)", color: "var(--ink)", padding: "12px 16px", borderRadius: 4, fontSize: 14 }}
+                    >
+                      <option value="">-- SELECT FROM DATABASE --</option>
                       {availableExercises.map((e) => (
                         <option key={e.id} value={e.id}>{e.name} ({e.muscleGroup})</option>
                       ))}
                     </select>
                     <button 
-                      className="btn btn-outline" 
                       onClick={handleAddExercise}
                       disabled={addingEx || !selectedExerciseId}
+                      style={{ background: "transparent", color: "var(--ink)", border: "1px solid var(--border)", padding: "0 24px", borderRadius: 4, fontWeight: 700, cursor: "pointer", textTransform: "uppercase" }}
                     >
-                      {addingEx ? "..." : "+ Adicionar"}
+                      {addingEx ? "..." : "ADD"}
                     </button>
                   </div>
                 </div>
 
                 {activeTemplate && activeTemplate.exercises.length > 0 && (
-                  <div style={{ marginTop: 32 }}>
-                    <h3 style={{ fontSize: 15, marginBottom: 12 }}>Exercícios no Template:</h3>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 16, display: "block" }}>
+                      LOADOUT SEQUENCE
+                    </label>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                       {activeTemplate.exercises.map((ex, i) => (
-                        <div key={ex.id} style={{ border: "1px solid var(--border)", borderRadius: 8, padding: 16 }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                            <span style={{ fontWeight: 600 }}>{i + 1}. {ex.exerciseName}</span>
-                            <button 
-                              className="btn btn-ghost btn-sm" 
-                              style={{ color: "var(--pink)" }}
-                              onClick={() => handleRemoveExercise(ex.id)}
-                            >
-                              Remover
-                            </button>
+                        <div key={ex.id} style={{ border: "1px solid var(--border)", borderRadius: 4, padding: 16, background: "var(--card)" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                            <span style={{ fontWeight: 700, fontSize: 15 }}>{String(i + 1).padStart(2, '0')} - {ex.exerciseName}</span>
+                            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                              <button onClick={() => handleMove(i, -1)} disabled={i === 0} style={{ background: "var(--faint)", border: "1px solid var(--border)", color: "var(--muted)", borderRadius: 4, width: 28, height: 28, cursor: i === 0 ? "not-allowed" : "pointer", opacity: i === 0 ? 0.4 : 1 }}>▲</button>
+                              <button onClick={() => handleMove(i, 1)} disabled={i === activeTemplate.exercises.length - 1} style={{ background: "var(--faint)", border: "1px solid var(--border)", color: "var(--muted)", borderRadius: 4, width: 28, height: 28, cursor: i === activeTemplate.exercises.length - 1 ? "not-allowed" : "pointer", opacity: i === activeTemplate.exercises.length - 1 ? 0.4 : 1 }}>▼</button>
+                              <button onClick={() => handleRemoveExercise(ex.id)} style={{ background: "transparent", border: "none", color: "var(--pink)", cursor: "pointer", fontSize: 12, fontWeight: 700, textTransform: "uppercase" }}>[ REMOVE ]</button>
+                            </div>
                           </div>
-                          <div className="field" style={{ marginBottom: 0 }}>
-                            <label style={{ fontSize: 12 }}>Orientações / Notas de Execução (Opcional)</label>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                            <label style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>NOTES / ORIENTATIONS</label>
                             <input 
-                              placeholder="Ex: Fazer back-off set na última série"
+                              placeholder="-- EMPTY --"
                               value={noteInputs[ex.id] || ""}
                               onChange={(e) => setNoteInputs(p => ({ ...p, [ex.id]: e.target.value }))}
                               onBlur={() => handleSaveNote(ex.id)}
+                              style={{ background: "transparent", border: "none", borderBottom: "1px dashed var(--border)", color: "var(--muted)", padding: "8px 0", borderRadius: 0, fontSize: 13 }}
                             />
                           </div>
                         </div>
@@ -305,12 +371,18 @@ export default function WorkoutsList() {
                   </div>
                 )}
 
-                <div style={{ marginTop: 32, display: "flex", justifyContent: "space-between" }}>
-                  <button className="btn btn-ghost" style={{ color: "var(--pink)" }} onClick={() => handleDeleteTemplate(editingTemplateId)}>
-                    Excluir Template
+                <div style={{ marginTop: 48, display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--border)", paddingTop: 24 }}>
+                  <button 
+                    onClick={() => handleDeleteTemplate(editingTemplateId)}
+                    style={{ background: "transparent", border: "none", color: "var(--pink)", cursor: "pointer", fontSize: 13, fontWeight: 700, textTransform: "uppercase" }}
+                  >
+                    DELETE TEMPLATE
                   </button>
-                  <button className="btn btn-primary" onClick={() => setIsModalOpen(false)}>
-                    Concluir Edição
+                  <button 
+                    onClick={() => setIsModalOpen(false)}
+                    style={{ background: "var(--ink)", color: "var(--bg)", border: "none", padding: "12px 32px", borderRadius: 4, fontWeight: 700, cursor: "pointer", textTransform: "uppercase" }}
+                  >
+                    SAVE
                   </button>
                 </div>
               </>

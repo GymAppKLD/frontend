@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local AI Agents and Skills
+.agents/
+.claude/
+.cursor/
+.opencode/
+skills-lock.json

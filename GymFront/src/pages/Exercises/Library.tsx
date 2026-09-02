@@ -13,7 +13,7 @@ export default function Library() {
   useEffect(() => {
     fetchAllExercises()
       .then(setExercises)
-      .catch(() => setError("Não foi possível carregar os exercícios."))
+      .catch(() => setError("Failed to load exercises."))
       .finally(() => setLoading(false));
   }, []);
 
@@ -27,63 +27,68 @@ export default function Library() {
   }, {});
 
   return (
-    <>
+    <div style={{ maxWidth: 1000, margin: "0 auto", paddingBottom: 64 }}>
       <div className="page-head">
         <div>
-          <h1 className="page-title">Exercises</h1>
-          <p className="page-sub">Browse and manage your exercise library</p>
+          <h1 className="page-title">EXERCISES</h1>
         </div>
         <button className="btn btn-primary" onClick={() => navigate("/exercises/create")}>
-          + New Exercise
+          + ADD EXERCISE
         </button>
       </div>
 
-      <div className="search" style={{ width: "100%", maxWidth: 400, marginBottom: 14 }}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="11" cy="11" r="7" />
-          <path d="m21 21-4.3-4.3" />
-        </svg>
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search exercises..."
-          style={{
-            border: "none",
-            background: "transparent",
-            outline: "none",
-            font: "inherit",
-            color: "inherit",
-            width: "100%",
-          }}
-        />
+      <div className="field">
+        <label>SEARCH EXERCISES</label>
+        <div className="score-cell active" style={{ padding: 0, width: "100%", maxWidth: 480 }}>
+          <input
+            type="text"
+            placeholder="SEARCH..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="score-input"
+            style={{ width: "100%", padding: "16px 24px", textAlign: "left", color: "var(--accent)" }}
+          />
+        </div>
       </div>
 
-      {loading && <div className="card">Carregando...</div>}
-      {error && <div className="card" style={{ color: "var(--pink)" }}>{error}</div>}
+      {loading && <div style={{ color: "var(--muted)", margin: "40px 0", fontFamily: "var(--mono)" }}>[ LOADING EXERCISES... ]</div>}
+      {error && <div style={{ color: "var(--danger)", margin: "40px 0", fontFamily: "var(--mono)" }}>[ ERR: {error} ]</div>}
 
       {!loading && !error && Object.keys(grouped).length === 0 && (
-        <div className="card">Nenhum exercício encontrado.</div>
+        <div className="card" style={{ fontFamily: "var(--mono)", color: "var(--muted)" }}>[ NO EXERCISES FOUND ]</div>
       )}
 
-      {!loading &&
-        !error &&
-        Object.entries(grouped).map(([group, items]) => (
-          <div key={group}>
-            <div className="section-label">{group}</div>
-            <div className="grid g-3">
-              {items.map((exercise) => (
-                <div
-                  className="muscle-card"
-                  key={exercise.id}
-                  onClick={() => navigate(`/exercises/${exercise.id}/progress`)}
+      {!loading && !error && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 24, marginTop: 48 }}>
+          {Object.entries(grouped)
+            .sort((a, b) => a[0].localeCompare(b[0]))
+            .map(([, list]) => 
+              list.map((ex) => (
+                <div 
+                  key={ex.id}
+                  className="card"
+                  onClick={() => navigate(`/exercises/${ex.id}/progress`)}
+                  style={{ 
+                    cursor: "pointer",
+                    transition: "transform 0.15s ease, border-color 0.15s ease",
+                    padding: 24,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 16
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.borderColor = "var(--accent)"}
+                  onMouseOut={(e) => e.currentTarget.style.borderColor = "var(--border)"}
                 >
-                  <div className="mname">{exercise.name}</div>
-                  <div className="msub">{exercise.muscleGroup}</div>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: 18, textTransform: "uppercase", color: "var(--ink)", letterSpacing: "-0.02em" }}>{ex.name}</div>
+                    <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.1em", marginTop: 8, textTransform: "uppercase" }}>{ex.muscleGroup}</div>
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--accent)", fontFamily: "var(--mono)", fontWeight: 800, letterSpacing: "0.1em", marginTop: "auto" }}>PROGRESSION ➔</div>
                 </div>
-              ))}
-            </div>
-          </div>
-        ))}
-    </>
+              ))
+            )}
+        </div>
+      )}
+    </div>
   );
 }

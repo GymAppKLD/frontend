@@ -9,6 +9,7 @@ export interface WorkoutExercise {
   exerciseName: string;
   targetMuscles: string;
   notes: string | null;
+  logNotes: string | null;
   technique: string;
   executionGuidance: string;
   weeklyVolume: number;

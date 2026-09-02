@@ -1,5 +1,4 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Layout from "./layout/Layout";
 import Login from "./pages/Auth/Login";
@@ -28,10 +27,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <BrowserRouter>
-          <Routes>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             
@@ -50,9 +48,8 @@ function App() {
               <Route path="/settings" element={<Settings />} />
             </Route>
           </Routes>
-        </BrowserRouter>
-      </AuthProvider>
-    </ThemeProvider>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 
