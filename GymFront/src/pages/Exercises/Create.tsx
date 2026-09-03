@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createExercise } from "../../api/exerciseApi";
+import { usePreferences } from "../../context/PreferencesContext";
 
 const MUSCLE_GROUPS = [
   "Chest", "Back", "Legs", "Shoulders", "Biceps", "Triceps", "Core", "Full Body"
 ];
 
 export default function Create() {
+  const { t } = usePreferences();
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [muscleGroup, setMuscleGroup] = useState(MUSCLE_GROUPS[0]);
@@ -37,14 +39,14 @@ export default function Create() {
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 48, marginTop: 16, borderBottom: "1px solid var(--border)", paddingBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 40, fontWeight: 800, color: "var(--ink)", letterSpacing: "-0.04em", textTransform: "uppercase", lineHeight: 1 }}>NEW EXERCISE</h1>
+          <h1 style={{ fontSize: 40, fontWeight: 800, color: "var(--ink)", letterSpacing: "-0.04em", textTransform: "uppercase", lineHeight: 1 }}>{t("newExercise").toUpperCase()}</h1>
         </div>
       </div>
 
       <div className="card" style={{ padding: 40 }}>
         <form onSubmit={handleSubmit}>
           <div className="field">
-            <label>MODULE DESIGNATION</label>
+            <label>{t("designation").toUpperCase()}</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -56,7 +58,7 @@ export default function Create() {
           </div>
 
           <div className="field" style={{ marginBottom: 40 }}>
-            <label>PRIMARY VECTOR</label>
+            <label>{t("muscleGroup").toUpperCase()}</label>
             <select
               value={muscleGroup}
               onChange={(e) => setMuscleGroup(e.target.value)}

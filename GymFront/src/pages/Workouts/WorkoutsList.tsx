@@ -12,11 +12,13 @@ import {
   startFromTemplate
 } from "../../api/workoutApi";
 import { fetchAllExercises } from "../../api/exerciseApi";
+import { usePreferences } from "../../context/PreferencesContext";
 import type { WorkoutSummary, WorkoutResponse } from "../../types/workout";
 import type { Exercise } from "../../types/exercise";
 
 export default function WorkoutsList() {
   const navigate = useNavigate();
+  const { t } = usePreferences();
   const [history, setHistory] = useState<WorkoutSummary[]>([]);
   const [templates, setTemplates] = useState<WorkoutSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -174,14 +176,14 @@ export default function WorkoutsList() {
     <>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 48, marginTop: 16 }}>
         <div>
-          <h1 style={{ fontSize: 32, fontWeight: 800, color: "var(--ink)", letterSpacing: "-0.03em", textTransform: "uppercase" }}>WORKOUTS</h1>
+          <h1 style={{ fontSize: 32, fontWeight: 800, color: "var(--ink)", letterSpacing: "-0.03em" }}>{t("workouts")}</h1>
           <div style={{ width: 40, height: 4, background: "var(--accent)", marginTop: 8 }}></div>
         </div>
         <button 
           onClick={openCreateModal}
-          style={{ background: "var(--accent)", color: "var(--bg)", border: "none", padding: "12px 24px", borderRadius: 4, fontWeight: 700, fontSize: 14, cursor: "pointer", textTransform: "uppercase", letterSpacing: "0.05em" }}
+          className="btn btn-primary"
         >
-          + CREATE TEMPLATE
+          + {t("createTemplate")}
         </button>
       </div>
 
@@ -195,7 +197,7 @@ export default function WorkoutsList() {
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24, borderBottom: "1px solid var(--border)", paddingBottom: 16 }}>
               <div style={{ width: 12, height: 12, borderRadius: 2, background: "var(--accent)" }}></div>
-              <h2 style={{ fontSize: 14, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--muted)", margin: 0, fontWeight: 700 }}>TEMPLATES</h2>
+              <h2 style={{ fontSize: 14, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--muted)", margin: 0, fontWeight: 700 }}>{t("templates")}</h2>
             </div>
             
             {templates.length === 0 ? (
@@ -213,21 +215,22 @@ export default function WorkoutsList() {
                     alignItems: "center"
                   }}>
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: 18, color: "var(--ink)", textTransform: "uppercase", letterSpacing: "0.02em" }}>{w.name}</div>
+                      <div style={{ fontWeight: 700, fontSize: 18, color: "var(--ink)", letterSpacing: "0.02em" }}>{w.name}</div>
                       <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 4, fontFamily: "monospace" }}>{w.exerciseCount} MODULES</div>
                     </div>
                     <div style={{ display: "flex", gap: 8 }}>
                       <button 
                         onClick={() => openEditModal(w.id, w.name)}
-                        style={{ background: "transparent", border: "1px solid var(--border)", color: "var(--muted)", padding: "8px 16px", borderRadius: 4, fontWeight: 600, fontSize: 13, cursor: "pointer", textTransform: "uppercase" }}
+                        className="btn btn-outline btn-sm"
                       >
-                        EDIT
+                        {t("edit")}
                       </button>
                       <button 
                         onClick={() => handleStartSession(w.id)}
-                        style={{ background: "var(--accent-glow)", border: "1px solid var(--accent)", color: "var(--accent)", padding: "8px 16px", borderRadius: 4, fontWeight: 700, fontSize: 13, cursor: "pointer", textTransform: "uppercase" }}
+                        className="btn btn-sm"
+                        style={{ background: "var(--accent-glow)", border: "1px solid var(--accent)", color: "var(--accent)" }}
                       >
-                        START
+                        {t("start")}
                       </button>
                     </div>
                   </div>
@@ -240,7 +243,7 @@ export default function WorkoutsList() {
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24, borderBottom: "1px solid var(--border)", paddingBottom: 16 }}>
               <div style={{ width: 12, height: 12, borderRadius: 2, background: "var(--faint)" }}></div>
-              <h2 style={{ fontSize: 14, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--muted)", margin: 0, fontWeight: 700 }}>LOG ARCHIVE</h2>
+              <h2 style={{ fontSize: 14, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--muted)", margin: 0, fontWeight: 700 }}>{t("logArchive")}</h2>
             </div>
             
             {history.length === 0 ? (
@@ -259,7 +262,7 @@ export default function WorkoutsList() {
                       <span style={{ color: "var(--muted)", fontFamily: "monospace", fontSize: 13, minWidth: 100 }}>
                         {new Date(w.createdAt).toLocaleDateString()}
                       </span>
-                      <span style={{ fontWeight: 600, color: "var(--ink)", textTransform: "uppercase" }}>{w.name}</span>
+                      <span style={{ fontWeight: 600, color: "var(--ink)" }}>{w.name}</span>
                     </div>
                     <span style={{ color: "var(--muted)", fontFamily: "monospace", fontSize: 13 }}>
                       {w.exerciseCount} EXS
@@ -288,14 +291,14 @@ export default function WorkoutsList() {
             </button>
             
             <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 32, color: "var(--ink)", textTransform: "uppercase" }}>
-              {editingTemplateId ? "EDIT TEMPLATE" : "NEW TEMPLATE"}
+              {editingTemplateId ? t("editTemplate") : t("newTemplate")}
             </h2>
 
             {!editingTemplateId ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <label style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>DESIGNATION</label>
+                <label style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{t("designation")}</label>
                 <div style={{ display: "flex", gap: 12 }}>
-                    <input 
+                  <input 
                     value={templateName} 
                     onChange={(e) => setTemplateName(e.target.value)} 
                     placeholder="e.g. Upper - Push Day" 
@@ -305,19 +308,19 @@ export default function WorkoutsList() {
                     onClick={handleCreateTemplate}
                     style={{ background: "var(--accent)", color: "var(--bg)", border: "none", padding: "0 24px", borderRadius: 4, fontWeight: 700, cursor: "pointer", textTransform: "uppercase" }}
                   >
-                    INITIALIZE
+                    {t("create")}
                   </button>
                 </div>
               </div>
             ) : (
               <>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 32 }}>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>DESIGNATION</label>
-                  <input value={templateName} disabled style={{ background: "transparent", border: "none", borderBottom: "1px solid var(--border)", color: "var(--ink)", padding: "12px 0", borderRadius: 0, fontSize: 18, fontWeight: 700, textTransform: "uppercase" }} />
+                  <label style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{t("designation")}</label>
+                  <input value={templateName} disabled style={{ background: "transparent", border: "none", borderBottom: "1px solid var(--border)", color: "var(--ink)", padding: "12px 0", borderRadius: 0, fontSize: 18, fontWeight: 700 }} />
                 </div>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 32 }}>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>APPEND MODULE</label>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{t("appendModule")}</label>
                   <div style={{ display: "flex", gap: 12 }}>
                     <select 
                       value={selectedExerciseId} 
@@ -332,9 +335,9 @@ export default function WorkoutsList() {
                     <button 
                       onClick={handleAddExercise}
                       disabled={addingEx || !selectedExerciseId}
-                      style={{ background: "transparent", color: "var(--ink)", border: "1px solid var(--border)", padding: "0 24px", borderRadius: 4, fontWeight: 700, cursor: "pointer", textTransform: "uppercase" }}
+                      className="btn btn-outline"
                     >
-                      {addingEx ? "..." : "ADD"}
+                      {addingEx ? "..." : t("add")}
                     </button>
                   </div>
                 </div>
@@ -342,7 +345,7 @@ export default function WorkoutsList() {
                 {activeTemplate && activeTemplate.exercises.length > 0 && (
                   <div>
                     <label style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 16, display: "block" }}>
-                      LOADOUT SEQUENCE
+                      {t("loadoutSequence")} 
                     </label>
                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                       {activeTemplate.exercises.map((ex, i) => (
@@ -356,7 +359,7 @@ export default function WorkoutsList() {
                             </div>
                           </div>
                           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                            <label style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>NOTES / ORIENTATIONS</label>
+                            <label style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>{t("notesOrientations")}</label>
                             <input 
                               placeholder="-- EMPTY --"
                               value={noteInputs[ex.id] || ""}
@@ -376,13 +379,13 @@ export default function WorkoutsList() {
                     onClick={() => handleDeleteTemplate(editingTemplateId)}
                     style={{ background: "transparent", border: "none", color: "var(--pink)", cursor: "pointer", fontSize: 13, fontWeight: 700, textTransform: "uppercase" }}
                   >
-                    DELETE TEMPLATE
+                    {t("deleteTemplate")}
                   </button>
                   <button 
                     onClick={() => setIsModalOpen(false)}
                     style={{ background: "var(--ink)", color: "var(--bg)", border: "none", padding: "12px 32px", borderRadius: 4, fontWeight: 700, cursor: "pointer", textTransform: "uppercase" }}
                   >
-                    SAVE
+                    {t("save")}
                   </button>
                 </div>
               </>

@@ -5,6 +5,7 @@
   --faint: #2A2A2E;
   --muted: #6B6B73;
   --ink: #EBEBF5;
+  --frame: #060607;
   --accent: #FF9F1C;
   --accent-glow: rgba(255, 159, 28, 0.15);
   --success: #00E676;
@@ -15,6 +16,25 @@
   --info-glow: rgba(27, 143, 245, 0.15);
   --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --mono: 'JetBrains Mono', 'Courier New', Courier, monospace;
+}
+
+/* Light theme — keeps the same scoreboard component language, light surfaces */
+body[data-theme='light'] {
+  --bg: #f4f5f7;
+  --card: #ffffff;
+  --border: #dfe1e6;
+  --faint: #e7e9ee;
+  --muted: #667085;
+  --ink: #1a1d23;
+  --frame: #ffffff;
+  --accent: #c2410c;
+  --accent-glow: rgba(194, 65, 12, 0.12);
+  --success: #0e9f6e;
+  --success-glow: rgba(14, 159, 110, 0.12);
+  --danger: #d92d20;
+  --danger-glow: rgba(217, 45, 32, 0.12);
+  --info: #1570ef;
+  --info-glow: rgba(21, 112, 239, 0.12);
 }
 html { scrollbar-width: none; -ms-overflow-style: none; }
 html::-webkit-scrollbar, body::-webkit-scrollbar, .content::-webkit-scrollbar, .sidebar::-webkit-scrollbar { display: none; width: 0; height: 0; }

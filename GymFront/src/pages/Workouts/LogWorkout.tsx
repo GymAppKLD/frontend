@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { usePreferences } from "../../context/PreferencesContext";
 import { 
   addSet, 
   completeWorkout, 
   updateExerciseLogNotes,
-  fetchWorkoutById
+  fetchWorkoutById,
+  deleteWorkout
 } from "../../api/workoutApi";
 import { fetchAllExercises, fetchPreviousNote } from "../../api/exerciseApi";
 import type { Exercise } from "../../types/exercise";
@@ -13,6 +15,7 @@ import type { WorkoutResponse } from "../../types/workout";
 
 export default function LogWorkout() {
   const navigate = useNavigate();
+  const { t } = usePreferences();
   const [searchParams] = useSearchParams();
   const sessionIdParam = searchParams.get("sessionId");
 
@@ -26,6 +29,7 @@ export default function LogWorkout() {
   const [setInputs, setSetInputs] = useState<Record<string, { weightKg: string, reps: string }>>({});
   const [sessionNoteInputs, setSessionNoteInputs] = useState<Record<string, string>>({});
   const [previousNotes, setPreviousNotes] = useState<Record<string, PreviousNote | null>>({});
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   useEffect(() => {
     if (!sessionIdParam) {
@@ -134,6 +138,17 @@ export default function LogWorkout() {
     }
   };
 
+  const handleCancelSession = async () => {
+    if (!sessionId) return;
+    setShowCancelModal(false);
+    try {
+      await deleteWorkout(sessionId);
+      navigate("/workouts");
+    } catch {
+      alert("Failed to cancel session.");
+    }
+  };
+
   if (loading) return <div style={{ padding: 40, textAlign: "center", color: "var(--muted)", fontFamily: "monospace" }}>[ INITIATING SEQUENCE... ]</div>;
   
   if (error) return (
@@ -153,10 +168,12 @@ export default function LogWorkout() {
           <h1 style={{ fontSize: 40, fontWeight: 800, color: "var(--ink)", letterSpacing: "-0.04em", lineHeight: 1 }}>{activeSession?.name}</h1>
         </div>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 12px", background: "var(--success-glow)", color: "var(--success)", border: "1px solid var(--success)", borderRadius: 4, fontSize: 12, fontWeight: 700, letterSpacing: "0.1em" }}>
-            <span style={{ display: "block", width: 8, height: 8, borderRadius: "50%", background: "var(--success)", boxShadow: "0 0 8px var(--success)" }}></span>
-            ACTIVE
-          </div>
+          <button
+            onClick={() => setShowCancelModal(true)}
+            style={{ background: "var(--danger-glow)", color: "var(--danger)", border: "1px solid var(--danger)", borderRadius: 4, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "var(--mono)", letterSpacing: "0.05em" }}
+          >
+            {t("cancelSession")}
+          </button>
           <div style={{ fontSize: 13, color: "var(--muted)", fontFamily: "monospace" }}>{new Date().toLocaleDateString()}</div>
         </div>
       </div>
@@ -189,14 +206,14 @@ export default function LogWorkout() {
               <div style={{ padding: "24px" }}>
                 {ex.notes && (
                   <div style={{ marginBottom: 16, padding: "12px 16px", background: "var(--faint)", borderRadius: 4, borderLeft: "2px solid var(--accent)", fontSize: 13 }}>
-                    <div style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.1em", marginBottom: 4 }}>ORIENTATION</div>
+                    <div style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.1em", marginBottom: 4 }}>{t("orientation").toUpperCase()}</div>
                     <div>{ex.notes}</div>
                   </div>
                 )}
                 <div style={{ marginBottom: 24 }}>
                   <input 
                     className="score-input"
-                    placeholder="Session note (e.g. slept bad, different time)..."
+                    placeholder={t("sessionNote")}
                     value={sessionNoteInputs[ex.id] || ""}
                     onChange={(e) => setSessionNoteInputs(prev => ({ ...prev, [ex.id]: e.target.value }))}
                     onBlur={() => handleSaveSessionNote(ex.id)}
@@ -267,6 +284,9 @@ export default function LogWorkout() {
                     </tr>
                   </tbody>
                 </table>
+                <div style={{ marginTop: 10, fontSize: 12, lineHeight: 1.3, color: "var(--muted)" }}>
+                  {t("enterTotalLoad")}
+                </div>
               </div>
             </div>
           );
@@ -295,6 +315,32 @@ export default function LogWorkout() {
             </button>
         )}
       </div>
+
+      {/* CANCEL SESSION CONFIRMATION MODAL */}
+      {showCancelModal && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", zIndex: 999, display: "flex", justifyContent: "center", alignItems: "center", padding: 24 }}>
+          <div style={{ width: "100%", maxWidth: 420, background: "var(--card)", border: "1px solid var(--danger)", borderRadius: 8, padding: 32, position: "relative", boxShadow: "0 24px 48px rgba(0,0,0,0.5)" }}>
+            <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 8, color: "var(--danger)", fontFamily: "var(--mono)", letterSpacing: "0.05em" }}>{t("discardSession").toUpperCase()}</h2>
+            <div style={{ fontSize: 14, color: "var(--muted)", marginBottom: 24, lineHeight: 1.5 }}>
+              {t("discardMsg")}
+            </div>
+            <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setShowCancelModal(false)}
+                style={{ background: "transparent", color: "var(--ink)", border: "1px solid var(--border)", borderRadius: 4, padding: "12px 24px", fontWeight: 700, cursor: "pointer", fontFamily: "var(--mono)", fontSize: 13 }}
+              >
+                {t("keep")}
+              </button>
+              <button
+                onClick={handleCancelSession}
+                style={{ background: "var(--danger)", color: "var(--bg)", border: "none", borderRadius: 4, padding: "12px 24px", fontWeight: 700, cursor: "pointer", fontFamily: "var(--mono)", fontSize: 13 }}
+              >
+                {t("discard")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

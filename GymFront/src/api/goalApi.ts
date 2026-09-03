@@ -28,3 +28,11 @@ export async function createGoal(payload: Omit<CreateGoalPayload, 'memberId'>): 
   if (!res.ok) throw new Error("Failed to create goal");
   return res.json();
 }
+
+export async function deleteGoal(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/goals/${id}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to delete goal");
+}

@@ -1,10 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { fetchAllExercises } from "../../api/exerciseApi";
+import { usePreferences } from "../../context/PreferencesContext";
 import type { Exercise } from "../../types/exercise";
 
 export default function Library() {
   const navigate = useNavigate();
+  const { t, translateMuscle } = usePreferences();
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,19 +32,19 @@ export default function Library() {
     <div style={{ maxWidth: 1000, margin: "0 auto", paddingBottom: 64 }}>
       <div className="page-head">
         <div>
-          <h1 className="page-title">EXERCISES</h1>
+          <h1 className="page-title">{t("exercises")}</h1>
         </div>
         <button className="btn btn-primary" onClick={() => navigate("/exercises/create")}>
-          + ADD EXERCISE
+          + {t("addExercise")}
         </button>
       </div>
 
       <div className="field">
-        <label>SEARCH EXERCISES</label>
+        <label>{t("")}</label>
         <div className="score-cell active" style={{ padding: 0, width: "100%", maxWidth: 480 }}>
           <input
             type="text"
-            placeholder="SEARCH..."
+            placeholder={t("search")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="score-input"
@@ -51,11 +53,11 @@ export default function Library() {
         </div>
       </div>
 
-      {loading && <div style={{ color: "var(--muted)", margin: "40px 0", fontFamily: "var(--mono)" }}>[ LOADING EXERCISES... ]</div>}
+      {loading && <div style={{ color: "var(--muted)", margin: "40px 0", fontFamily: "var(--mono)" }}>[ {t("exercises").toUpperCase()}... ]</div>}
       {error && <div style={{ color: "var(--danger)", margin: "40px 0", fontFamily: "var(--mono)" }}>[ ERR: {error} ]</div>}
 
       {!loading && !error && Object.keys(grouped).length === 0 && (
-        <div className="card" style={{ fontFamily: "var(--mono)", color: "var(--muted)" }}>[ NO EXERCISES FOUND ]</div>
+        <div className="card" style={{ fontFamily: "var(--mono)", color: "var(--muted)" }}>[ {t("noResults").toUpperCase()} ]</div>
       )}
 
       {!loading && !error && (
@@ -80,10 +82,10 @@ export default function Library() {
                   onMouseOut={(e) => e.currentTarget.style.borderColor = "var(--border)"}
                 >
                   <div>
-                    <div style={{ fontWeight: 800, fontSize: 18, textTransform: "uppercase", color: "var(--ink)", letterSpacing: "-0.02em" }}>{ex.name}</div>
-                    <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.1em", marginTop: 8, textTransform: "uppercase" }}>{ex.muscleGroup}</div>
+                    <div style={{ fontWeight: 800, fontSize: 18, color: "var(--ink)", letterSpacing: "-0.02em" }}>{ex.name}</div>
+                    <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.1em", marginTop: 8 }}>{translateMuscle(ex.muscleGroup)}</div>
                   </div>
-                  <div style={{ fontSize: 11, color: "var(--accent)", fontFamily: "var(--mono)", fontWeight: 800, letterSpacing: "0.1em", marginTop: "auto" }}>PROGRESSION ➔</div>
+                  <div style={{ fontSize: 11, color: "var(--accent)", fontFamily: "var(--mono)", fontWeight: 800, letterSpacing: "0.1em", marginTop: "auto" }}>{t("progression").toUpperCase()} ➔</div>
                 </div>
               ))
             )}

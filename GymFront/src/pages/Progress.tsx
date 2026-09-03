@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { fetchProgressOverview } from "../api/memberApi";
+import { usePreferences } from "../context/PreferencesContext";
 import type { ProgressOverviewDTO } from "../types/progress";
 
 function LineChart({ points, h = 220, color = "var(--info)" }: { points: number[]; h?: number; color?: string }) {
@@ -81,6 +82,7 @@ function formatPct(v: number): string {
 }
 
 export default function Progress() {
+  const { t, translateMuscle } = usePreferences();
   const [data, setData] = useState<ProgressOverviewDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -124,7 +126,7 @@ export default function Progress() {
     <div style={{ maxWidth: 1000, margin: "0 auto", paddingBottom: 64 }}>
       <div className="page-head" style={{ marginBottom: 48, marginTop: 16 }}>
         <div>
-          <h1 className="page-title">PROGRESS OVERVIEW</h1>
+          <h1 className="page-title">{t("progress")} {t("overview")}</h1>
         </div>
       </div>
 
@@ -135,7 +137,7 @@ export default function Progress() {
         <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
           <div className="card" style={{ padding: 32 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, borderBottom: "1px solid var(--border)", paddingBottom: 12 }}>
-              <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.1em" }}>WEEKLY SET VOLUME</div>
+                  <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.1em" }}>{t("volumeWeekly").toUpperCase()}</div>
               
               {allMuscles.length > 0 && (
                 <select 
@@ -143,16 +145,16 @@ export default function Progress() {
                   onChange={(e) => setMuscleFilter(e.target.value)}
                   style={{ background: "transparent", border: "1px solid var(--border)", color: "var(--accent)", padding: "4px 8px", fontSize: 11, fontFamily: "var(--mono)", fontWeight: 700 }}
                 >
-                  <option value="ALL">ALL MUSCLES</option>
+                  <option value="ALL">{t("allMuscles")}</option>
                   {allMuscles.map(m => (
-                    <option key={m} value={m}>{m}</option>
+                    <option key={m} value={m}>{translateMuscle(m)}</option>
                   ))}
                 </select>
               )}
             </div>
             
             {volumePoints.length === 0 ? (
-              <p style={{ color: "var(--muted)", fontFamily: "var(--mono)" }}>[ NO VOLUME DATA ]</p>
+              <p style={{ color: "var(--muted)", fontFamily: "var(--mono)" }}>[ {t("noData").toUpperCase()} ]</p>
             ) : (
               <>
                 <LineChart points={volumePoints} h={220} />
@@ -166,14 +168,14 @@ export default function Progress() {
           </div>
 
           <div className="card" style={{ padding: 32 }}>
-            <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.1em", marginBottom: 24, borderBottom: "1px solid var(--border)", paddingBottom: 12 }}>EXERCISE PROGRESS (E1RM)</div>
+            <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.1em", marginBottom: 24, borderBottom: "1px solid var(--border)", paddingBottom: 12 }}>{t("exerciseProgress").toUpperCase()}</div>
             {data.exercises.length === 0 ? (
-              <p style={{ color: "var(--muted)", fontFamily: "var(--mono)" }}>[ NO EXERCISE DATA GATHERED YET ]</p>
+              <p style={{ color: "var(--muted)", fontFamily: "var(--mono)" }}>[ {t("noData").toUpperCase()} ]</p>
             ) : (
               <table>
                 <thead>
                   <tr>
-                    <th style={{ width: "40%" }}>EXERCISE</th>
+                    <th style={{ width: "40%" }}>{t("exercises").toUpperCase()}</th>
                     <th style={{ width: "20%" }}>DELTA</th>
                     <th style={{ width: "40%" }}>TREND (90D)</th>
                   </tr>
@@ -181,7 +183,7 @@ export default function Progress() {
                 <tbody>
                   {data.exercises.map((e) => (
                     <tr key={e.exerciseName}>
-                      <td style={{ fontWeight: 800, fontSize: 15, textTransform: "uppercase", color: "var(--ink)" }}>{e.exerciseName}</td>
+                      <td style={{ fontWeight: 800, fontSize: 15, color: "var(--ink)" }}>{e.exerciseName}</td>
                       <td>
                         <span className="score-cell" style={{ 
                           background: e.progressPct >= 0 ? "var(--success-glow)" : "var(--danger-glow)", 

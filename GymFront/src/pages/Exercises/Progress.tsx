@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { fetchExerciseById, fetchExerciseProgress } from "../../api/exerciseApi";
 import { useAuth } from "../../context/AuthContext";
+import { usePreferences } from "../../context/PreferencesContext";
 import type { Exercise } from "../../types/exercise";
 import type { ExerciseProgressDTO } from "../../types/progress";
 
@@ -34,6 +35,7 @@ export default function Progress() {
   const { token } = useAuth();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t, translateMuscle } = usePreferences();
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [progress, setProgress] = useState<ExerciseProgressDTO | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +63,7 @@ export default function Progress() {
         <>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32, borderBottom: "1px solid var(--border)", paddingBottom: 24, marginTop: 16 }}>
             <div>
-              <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.15em", marginBottom: 8, textTransform: "uppercase" }}>MODULE // {exercise.muscleGroup}</div>
+              <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.15em", marginBottom: 8, textTransform: "uppercase" }}>{translateMuscle(exercise.muscleGroup)}</div>
               <h1 style={{ fontSize: 32, fontWeight: 800, letterSpacing: "-0.03em", textTransform: "uppercase" }}>{exercise.name}</h1>
             </div>
             <div className="score-cell" style={{ fontSize: 11, letterSpacing: "0.1em" }}>E1RM MODE</div>
@@ -71,19 +73,19 @@ export default function Progress() {
             <>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
                 <div className="card" style={{ textAlign: "center", padding: 20 }}>
-                  <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.1em", marginBottom: 12 }}>LATEST</div>
-                  <div className="score-cell active" style={{ fontSize: 16, width: "100%" }}>{progress.latestWeightKg} KG × {progress.latestReps}</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.1em", marginBottom: 12 }}>{t("latest").toUpperCase()}</div>
+                  <div className="score-cell active" style={{ fontSize: 16, width: "100%" }}>{progress.latestWeightKg} KG x {progress.latestReps}</div>
                 </div>
                 <div className="card" style={{ textAlign: "center", padding: 20 }}>
-                  <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.1em", marginBottom: 12 }}>BEST SET</div>
-                  <div className="score-cell success" style={{ fontSize: 16, width: "100%" }}>{progress.bestWeightKg} × {progress.bestReps}</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.1em", marginBottom: 12 }}>{t("bestSet").toUpperCase()}</div>
+                  <div className="score-cell success" style={{ fontSize: 16, width: "100%" }}>{progress.bestWeightKg} x {progress.bestReps}</div>
                 </div>
                 <div className="card" style={{ textAlign: "center", padding: 20 }}>
-                  <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.1em", marginBottom: 12 }}>ESTIMATED 1RM</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.1em", marginBottom: 12 }}>{t("estimated1rm").toUpperCase()}</div>
                   <div className="score-cell" style={{ fontSize: 16, width: "100%" }}>{progress.estimated1Rm.toFixed(1)} KG</div>
                 </div>
                 <div className="card" style={{ textAlign: "center", padding: 20 }}>
-                  <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.1em", marginBottom: 12 }}>PROGRESSION</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.1em", marginBottom: 12 }}>{t("progression").toUpperCase()}</div>
                   <div className="score-cell" style={{ fontSize: 16, width: "100%", background: progress.progressPct >= 0 ? "var(--success-glow)" : "var(--danger-glow)", color: progress.progressPct >= 0 ? "var(--success)" : "var(--danger)", boxShadow: `inset 0 0 0 1px ${progress.progressPct >= 0 ? "var(--success)" : "var(--danger)"}` }}>
                     {formatPct(progress.progressPct)} {progress.progressPct >= 0 ? "↑" : "↓"}
                   </div>
@@ -120,8 +122,8 @@ export default function Progress() {
 
               <div className="card">
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, borderBottom: "1px solid var(--border)", paddingBottom: 16 }}>
-                  <div style={{ fontSize: 13, fontFamily: "var(--mono)", textTransform: "uppercase", letterSpacing: "0.15em", color: "var(--muted)", fontWeight: 800 }}>SESSION HISTORY</div>
-                  <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)" }}>{progress.sessions.length} LOGS</div>
+                  <div style={{ fontSize: 13, fontFamily: "var(--mono)", textTransform: "uppercase", letterSpacing: "0.15em", color: "var(--muted)", fontWeight: 800 }}>{t("sessionHistory").toUpperCase()}</div>
+                  <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)" }}>{progress.sessions.length}</div>
                 </div>
                 {progress.sessions.length === 0 ? (
                   <p style={{ color: "var(--muted)", fontFamily: "var(--mono)", fontSize: 13 }}>[ NO SESSIONS LOGGED ]</p>

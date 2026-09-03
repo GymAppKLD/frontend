@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchAllExercises } from "../../api/exerciseApi";
 import { createGoal } from "../../api/goalApi";
+import { usePreferences } from "../../context/PreferencesContext";
 import type { Exercise } from "../../types/exercise";
 
 export default function CreateGoal() {
   const navigate = useNavigate();
+  const { t } = usePreferences();
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [exerciseId, setExerciseId] = useState("");
   const [targetWeightKg, setTargetWeightKg] = useState("");
@@ -52,14 +54,14 @@ export default function CreateGoal() {
 
       <div className="page-head" style={{ marginBottom: 32 }}>
         <div>
-          <h1 className="page-title">NEW TARGET</h1>
+          <h1 className="page-title">{t("newTarget").toUpperCase()}</h1>
           <p className="page-sub">ESTABLISH PERFORMANCE OBJECTIVE</p>
         </div>
       </div>
 
       <div className="card" style={{ padding: 32 }}>
         <div className="field">
-          <label>TARGET MODULE (EXERCISE)</label>
+          <label>{t("target").toUpperCase()} ({t("exercises").toUpperCase()})</label>
           <select value={exerciseId} onChange={(e) => setExerciseId(e.target.value)} style={{ textTransform: "uppercase" }}>
             {exercises.map((e) => (
               <option key={e.id} value={e.id}>{e.name} ({e.muscleGroup})</option>
@@ -69,7 +71,7 @@ export default function CreateGoal() {
 
         <div className="field-row">
           <div className="field" style={{ flex: 1 }}>
-            <label>TARGET LOAD (KG)</label>
+            <label>{t("target").toUpperCase()} (KG)</label>
             <input
               type="number"
               placeholder="e.g. 100.0"
@@ -80,7 +82,7 @@ export default function CreateGoal() {
             />
           </div>
           <div className="field" style={{ flex: 1 }}>
-            <label>TARGET REPS</label>
+            <label>{t("target").toUpperCase()} REPS</label>
             <input
               type="number"
               placeholder="e.g. 5"
