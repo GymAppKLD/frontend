@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { fetchProgressOverview } from "../api/memberApi";
 import { usePreferences } from "../context/PreferencesContext";
+import CustomDropdown from "../components/CustomDropdown";
 import type { ProgressOverviewDTO } from "../types/progress";
 
 function LineChart({ points, h = 220, color = "var(--info)" }: { points: number[]; h?: number; color?: string }) {
@@ -140,16 +141,12 @@ export default function Progress() {
                   <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.1em" }}>{t("volumeWeekly").toUpperCase()}</div>
               
               {allMuscles.length > 0 && (
-                <select 
-                  value={muscleFilter} 
-                  onChange={(e) => setMuscleFilter(e.target.value)}
-                  style={{ background: "transparent", border: "1px solid var(--border)", color: "var(--accent)", padding: "4px 8px", fontSize: 11, fontFamily: "var(--mono)", fontWeight: 700 }}
-                >
-                  <option value="ALL">{t("allMuscles")}</option>
-                  {allMuscles.map(m => (
-                    <option key={m} value={m}>{translateMuscle(m)}</option>
-                  ))}
-                </select>
+                <CustomDropdown
+                  value={muscleFilter}
+                  ariaLabel={t("muscleGroup")}
+                  options={[{ value: "ALL", label: t("allMuscles") }, ...allMuscles.map((m) => ({ value: m, label: translateMuscle(m) }))]}
+                  onChange={setMuscleFilter}
+                />
               )}
             </div>
             

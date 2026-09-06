@@ -1,6 +1,6 @@
 import type { LoginRequestDTO, RegisterRequestDTO, AuthResponseDTO } from "../types/authDto";
 
-const API_BASE_URL = "http://localhost:8080/api";
+const API_BASE_URL = "/api";
 
 export async function login(data: LoginRequestDTO): Promise<AuthResponseDTO> {
   const res = await fetch(`${API_BASE_URL}/auth/login`, {

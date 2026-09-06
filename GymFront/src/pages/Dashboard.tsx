@@ -6,11 +6,10 @@ import { usePreferences } from "../context/PreferencesContext";
 import type { WorkoutSummary } from "../types/workout";
 import type { DashboardStatsDTO } from "../types/progress";
 
-function MiniLineChart({ points, colorVar, h = 40 }: { points: number[]; colorVar: string; h?: number }) {
+function MiniLineChart({ points, colorVar, h = 40, w = 140, width = "100%" }: { points: number[]; colorVar: string; h?: number; w?: number; width?: string | number }) {
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
 
   if (!points || points.length === 0) return null;
-  const w = 140;
   const pad = 12;
   const max = Math.max(...points);
   const min = Math.min(...points);
@@ -22,7 +21,7 @@ function MiniLineChart({ points, colorVar, h = 40 }: { points: number[]; colorVa
 
   if (points.length === 1) {
     return (
-      <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} style={{ overflow: "visible" }}>
+      <svg viewBox={`0 0 ${w} ${h}`} width={width} height={h} style={{ overflow: "visible" }}>
         <circle 
           cx={w / 2} cy={ys[0]} r="4" fill={colorVar} stroke="var(--card)" strokeWidth="2" 
           onMouseEnter={() => setHoverIdx(0)} onMouseLeave={() => setHoverIdx(null)}
@@ -46,7 +45,7 @@ function MiniLineChart({ points, colorVar, h = 40 }: { points: number[]; colorVa
   }
 
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} style={{ overflow: "visible" }}>
+    <svg viewBox={`0 0 ${w} ${h}`} width={width} height={h} style={{ overflow: "visible" }}>
       <path d={d} fill="none" stroke={colorVar} strokeWidth="2" strokeLinecap="round" style={{ pointerEvents: "none" }} />
       {xs.map((x, i) => (
         <g key={i}>
@@ -109,15 +108,20 @@ export default function Dashboard() {
     setShowAvgMenu(false);
   };
 
+  const avgChartPoints = stats && avgExercise
+    ? (stats.loadTrendPerExercise[avgExercise] ?? [])
+    : [];
+  const avgChartColor = "var(--info)";
+
   return (
     <div style={{ maxWidth: 1000, margin: "0 auto", paddingBottom: 64 }}>
       
       {/* HEADER */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 48, marginTop: 16, borderBottom: "1px solid var(--border)", paddingBottom: 24 }}>
+      <div className="dash-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24, marginTop: 8, borderBottom: "1px solid var(--border)", paddingBottom: 16 }}>
         <div>
-          <h1 style={{ fontSize: 40, fontWeight: 800, color: "var(--ink)", letterSpacing: "-0.04em", textTransform: "uppercase", lineHeight: 1 }}>DASHBOARD</h1>
+          <h1 className="dash-title" style={{ fontSize: 40, fontWeight: 800, color: "var(--ink)", letterSpacing: "-0.04em", textTransform: "uppercase", lineHeight: 1 }}>DASHBOARD</h1>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+        <div className="hide-mobile" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 12px", background: "var(--success-glow)", color: "var(--success)", border: "1px solid var(--success)", borderRadius: 4, fontSize: 12, fontWeight: 700, letterSpacing: "0.1em" }}>
             <span style={{ display: "block", width: 8, height: 8, borderRadius: "50%", background: "var(--success)", boxShadow: "0 0 8px var(--success)" }}></span>
             ONLINE
@@ -130,21 +134,21 @@ export default function Dashboard() {
       {error && !stats && <div style={{ color: "var(--danger)", margin: "40px 0", fontFamily: "monospace" }}>[ ERR: {error} ]</div>}
 
       {stats && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+        <div className="dash-main" style={{ display: "flex", flexDirection: "column", gap: 32 }}>
           
           {/* PRIMARY LED SCOREBOARD */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
-            <div style={{ background: "var(--card)", border: "1px solid var(--border)", padding: 24, borderRadius: 8, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+          <div className="scoreboard-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+            <div className="dash-stat" style={{ background: "var(--card)", border: "1px solid var(--border)", padding: 24, borderRadius: 8, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
               <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.1em", marginBottom: 12 }}>{t("workouts30d").toUpperCase()}</div>
               <div className="score-cell active" style={{ fontSize: 32, padding: "12px 24px" }}>{stats.workoutsThisMonth}</div>
             </div>
             
-            <div style={{ background: "var(--card)", border: "1px solid var(--border)", padding: 24, borderRadius: 8, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+            <div className="dash-stat" style={{ background: "var(--card)", border: "1px solid var(--border)", padding: 24, borderRadius: 8, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
               <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.1em", marginBottom: 12 }}>{t("totalSets30d").toUpperCase()}</div>
               <div className="score-cell success" style={{ fontSize: 32, padding: "12px 24px" }}>{formatSets(stats.totalVolumeKg)}</div>
             </div>
 
-            <div style={{ background: "var(--card)", border: "1px solid var(--border)", padding: 24, borderRadius: 8, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative" }}>
+            <div className="dash-stat" style={{ background: "var(--card)", border: "1px solid var(--border)", padding: 24, borderRadius: 8, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative" }}>
               <button
                 onClick={() => setShowAvgMenu((v) => !v)}
                 title={avgExercise ?? t("averageLoadKg")}
@@ -155,6 +159,9 @@ export default function Dashboard() {
                 </div>
                 <div className="score-cell" style={{ background: "var(--info-glow)", color: "var(--info)", boxShadow: "inset 0 0 0 1px var(--info)", fontSize: 32, padding: "12px 24px" }}>
                   {(avgExercise && stats.averageLoadPerExercise[avgExercise] != null ? stats.averageLoadPerExercise[avgExercise] : 0).toFixed(1)}
+                </div>
+                <div className="dash-avg-chart" style={{ width: "100%", marginTop: 4 }}>
+                  <MiniLineChart points={avgChartPoints} colorVar={avgChartColor} h={40} w={140} width="100%" />
                 </div>
               </button>
 
@@ -173,7 +180,7 @@ export default function Dashboard() {
               )}
             </div>
 
-            <div style={{ background: "var(--card)", border: "1px solid var(--border)", padding: 24, borderRadius: 8, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+            <div className="dash-stat" style={{ background: "var(--card)", border: "1px solid var(--border)", padding: 24, borderRadius: 8, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
               <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.1em", marginBottom: 12 }}>{t("overallProgress").toUpperCase()}</div>
               <div className="score-cell" style={{ background: stats.overallProgressPct >= 0 ? "var(--success-glow)" : "var(--danger-glow)", color: stats.overallProgressPct >= 0 ? "var(--success)" : "var(--danger)", boxShadow: `inset 0 0 0 1px ${stats.overallProgressPct >= 0 ? "var(--success)" : "var(--danger)"}`, fontSize: 32, padding: "12px 24px" }}>
                 {formatPct(stats.overallProgressPct)}
@@ -181,10 +188,10 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "2.5fr 1fr", gap: 32, alignItems: "start" }}>
+          <div className="dashboard-grid-2" style={{ display: "grid", gridTemplateColumns: "2.5fr 1fr", gap: 32, alignItems: "start" }}>
             
             {/* PRIORITY EXERCISES - SCOREBOARD STYLE */}
-            <div style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, padding: 24 }}>
+            <div className="dash-priority-card" style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, padding: 24 }}>
               <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.1em", marginBottom: 24, borderBottom: "1px solid var(--border)", paddingBottom: 12 }}>{t("topPriorityExercises").toUpperCase()}</div>
               
               {stats.priorityExercises.length === 0 ? (
@@ -192,13 +199,13 @@ export default function Dashboard() {
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                   {stats.priorityExercises.map((e, i) => (
-                    <div key={e.exerciseName} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 16, borderBottom: i < stats.priorityExercises.length - 1 ? "1px dashed var(--border)" : "none" }}>
+                    <div className="dash-priority-row" key={e.exerciseName} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 16, borderBottom: i < stats.priorityExercises.length - 1 ? "1px dashed var(--border)" : "none" }}>
                       <div>
                         <div style={{ fontWeight: 800, fontSize: 18, color: "var(--ink)", marginBottom: 4 }}>{e.exerciseName}</div>
                         <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.05em" }}>{translateMuscle(e.muscleGroup)}</div>
                       </div>
                       <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
-                        <div style={{ paddingTop: 16 }}>
+                        <div className="dash-priority-chart" style={{ paddingTop: 16 }}>
                           <MiniLineChart points={e.points} colorVar={e.progressPct >= 0 ? "var(--success)" : "var(--danger)"} />
                         </div>
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>

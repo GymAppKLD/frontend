@@ -170,7 +170,8 @@ export default function LogWorkout() {
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
           <button
             onClick={() => setShowCancelModal(true)}
-            style={{ background: "var(--danger-glow)", color: "var(--danger)", border: "1px solid var(--danger)", borderRadius: 4, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "var(--mono)", letterSpacing: "0.05em" }}
+            className="cancel-session-btn"
+            style={{ background: "var(--danger-glow)", color: "var(--danger)", border: "1px solid var(--danger)", borderRadius: 4, padding: "6px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "var(--mono)", letterSpacing: "0.05em", whiteSpace: "nowrap" }}
           >
             {t("cancelSession")}
           </button>

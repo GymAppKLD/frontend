@@ -2,7 +2,7 @@ import type { Exercise } from "../types/exercise";
 import { getAuthHeaders } from "./apiClient";
 import type { ExerciseProgressDTO } from "../types/progress";
 
-const API_BASE_URL = "http://localhost:8080/api";
+const API_BASE_URL = "/api";
 
 export async function fetchAllExercises(): Promise<Exercise[]> {
   const response = await fetch(`${API_BASE_URL}/exercises`, {

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
+import { useStatusBarColor } from "../hooks/useStatusBarColor";
 
 export type ThemeMode = "dark" | "light";
 export type Lang = "en" | "pt";
@@ -124,6 +125,9 @@ const DICT: Record<Lang, Dict> = {
     deadline: "Deadline",
     none: "None",
     deleteGoal: "Delete Goal",
+    bestLoad: "Best Load",
+    deleteGoalMsg: "Delete this goal? This action cannot be undone.",
+    deleteTemplateMsg: "Delete this template? This action cannot be undone.",
   },
   pt: {
     dashboard: "Dashboard",
@@ -217,6 +221,9 @@ const DICT: Record<Lang, Dict> = {
     deadline: "Prazo",
     none: "Nenhum",
     deleteGoal: "Excluir meta",
+    bestLoad: "Melhor carga",
+    deleteGoalMsg: "Excluir esta meta? Esta ação não pode ser desfeita.",
+    deleteTemplateMsg: "Excluir este modelo? Esta ação não pode ser desfeita.",
   },
 };
 
@@ -238,6 +245,9 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem("kfit_lang", lang);
   }, [lang]);
+
+  // Follow the active theme so the Android status bar matches the UI.
+  useStatusBarColor(theme === "dark" ? "#060607" : "#f4f5f7");
 
   const setTheme = (t: ThemeMode) => setThemeState(t);
   const setLang = (l: Lang) => setLangState(l);

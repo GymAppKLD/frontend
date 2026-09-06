@@ -40,6 +40,7 @@ export interface DashboardStatsDTO {
   priorityExercises: PriorityExerciseDTO[];
   weeklyVolumePerMuscle: Record<string, number>;
   averageLoadPerExercise: Record<string, number>;
+  loadTrendPerExercise: Record<string, number[]>;
 }
 
 export interface WeeklyVolumeDTO {

@@ -13,6 +13,7 @@ export default function GoalDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -24,7 +25,7 @@ export default function GoalDetails() {
 
   const handleDelete = async () => {
     if (!id) return;
-    if (!confirm("Delete this goal?")) return;
+    setShowDeleteModal(false);
     setDeleting(true);
     try {
       await deleteGoal(id);
@@ -58,7 +59,7 @@ export default function GoalDetails() {
               <h1 className="page-title">{goal.exerciseName}</h1>
             </div>
             <button
-              onClick={handleDelete}
+              onClick={() => setShowDeleteModal(true)}
               disabled={deleting}
               className="btn"
               style={{ background: "var(--danger-glow)", color: "var(--danger)", border: "1px solid var(--danger)", padding: "10px 18px" }}
@@ -68,12 +69,12 @@ export default function GoalDetails() {
           </div>
 
           <div className="card" style={{ borderTop: `4px solid ${isDone ? "var(--success)" : "var(--accent)"}`, marginBottom: 32, padding: 32 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 48 }}>
-              <div>
+            <div className="goal-stats-row" style={{ display: "flex", justifyContent: "space-between", gap: 16, marginBottom: 48, flexWrap: "wrap", textAlign: "center" }}>
+              <div style={{ flex: "1 1 200px", minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center" }}>
                 <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.05em", marginBottom: 12 }}>{t("target").toUpperCase()}</div>
                 <div className="score-cell active" style={{ fontSize: 32, padding: "12px 24px", background: isDone ? "var(--success-glow)" : "var(--accent-glow)", color: isDone ? "var(--success)" : "var(--accent)", boxShadow: `inset 0 0 0 1px ${isDone ? "var(--success)" : "var(--accent)"}` }}>{goal.targetWeightKg}kg × {goal.targetReps}</div>
               </div>
-              <div style={{ textAlign: "right" }}>
+              <div style={{ flex: "1 1 200px", minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center" }}>
                 <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.05em", marginBottom: 12 }}>{t("progression").toUpperCase()}</div>
                 <div className="score-cell" style={{ fontSize: 32, padding: "12px 24px" }}>
                   {goal.currentWeightKg != null ? `${goal.currentWeightKg}kg × ${goal.currentReps}` : "--"}
@@ -117,6 +118,21 @@ export default function GoalDetails() {
             </div>
           </div>
         </>
+      )}
+
+      {showDeleteModal && (
+        <div className="modal-backdrop" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", zIndex: 999, display: "flex", justifyContent: "center", alignItems: "center", padding: 24 }}>
+          <div className="modal-card" style={{ width: "100%", maxWidth: 420, background: "var(--card)", border: "1px solid var(--danger)", borderRadius: 8, padding: 32 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 8, color: "var(--danger)", fontFamily: "var(--mono)", letterSpacing: "0.05em" }}>{t("deleteGoal")}?</h2>
+            <div style={{ fontSize: 14, color: "var(--muted)", marginBottom: 24, lineHeight: 1.5 }}>
+              {t("deleteGoalMsg")}
+            </div>
+            <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
+              <button onClick={() => setShowDeleteModal(false)} className="btn btn-outline">{t("cancel")}</button>
+              <button onClick={handleDelete} className="btn" style={{ background: "var(--danger)", color: "var(--bg)", border: "none" }}>{t("deleteGoal")}</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

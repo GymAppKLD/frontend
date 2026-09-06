@@ -47,15 +47,9 @@ export default function Topbar() {
 
   return (
     <header className="topbar" style={{ background: "var(--frame)", borderBottom: "1px solid var(--border)" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-        <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.1em" }}>
-          KFIT // {user?.name || "USER"}
-        </div>
-      </div>
-
-      <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-        {/* Animated status LEDs */}
-        <div style={{ display: "flex", gap: 10, paddingRight: 16, borderRight: "1px solid var(--border)", alignItems: "center" }}>
+      {/* Left: LEDs (always visible, animated) + brand (hidden on mobile) */}
+      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <div style={{ display: "flex", gap: 10 }}>
           {LED_CYCLE.map((name) => {
             const active = LED_CYCLE[ledIndex] === name;
             const c = ledColor(name);
@@ -74,12 +68,18 @@ export default function Topbar() {
             );
           })}
         </div>
+        <div className="hide-mobile" style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.1em" }}>
+          KFIT // {user?.name || "USER"}
+        </div>
+      </div>
 
+      {/* Right: dark toggle + notifications + user (kept on mobile, aligned right) */}
+      <div style={{ display: "flex", gap: 12, alignItems: "center", marginLeft: "auto" }}>
         {/* Dark / Light toggle */}
         <button
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           title={theme === "dark" ? t("lightMode") : t("darkMode")}
-          style={{ width: 34, height: 34, background: "var(--bg)", color: theme === "dark" ? "var(--accent)" : "var(--ink)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", border: "1px solid var(--border)", borderRadius: 2 }}
+          style={{ width: 34, height: 34, background: "var(--bg)", color: theme === "dark" ? "var(--accent)" : "var(--ink)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", border: "1px solid var(--border)", borderRadius: 2, flexShrink: 0 }}
         >
           {theme === "dark" ? (
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>
@@ -89,7 +89,7 @@ export default function Topbar() {
         </button>
 
         {/* Notifications */}
-        <div style={{ position: "relative" }}>
+        <div style={{ position: "relative", flexShrink: 0 }}>
           <button
             onClick={() => setShowNotifications((v) => !v)}
             aria-label="Notifications"
@@ -105,42 +105,48 @@ export default function Topbar() {
               </div>
             )}
           </button>
-
-          {showNotifications && (
-            <div style={{ position: "absolute", right: 0, top: 44, width: 300, background: "var(--card)", border: "1px solid var(--border)", borderRadius: 6, boxShadow: "0 16px 40px rgba(0,0,0,0.4)", zIndex: 999, overflow: "hidden" }}>
-              <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border)", fontSize: 11, fontFamily: "var(--mono)", letterSpacing: "0.1em", color: "var(--muted)" }}>
-                {t("goalReached").toUpperCase()}
-              </div>
-              {reachedGoals.length === 0 ? (
-                <div style={{ padding: 16, fontSize: 13, color: "var(--muted)", fontFamily: "var(--mono)" }}>
-                  [ {t("noNotifications").toUpperCase()} ]
-                </div>
-              ) : (
-                reachedGoals.map((g) => (
-                  <div key={g.id} onClick={() => { setShowNotifications(false); navigate(`/goals/${g.id}`); }} style={{ padding: "12px 16px", cursor: "pointer", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontWeight: 700, fontSize: 13 }}>{g.exerciseName}</span>
-                    <span className="score-cell success" style={{ fontSize: 10 }}>100% ✓</span>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
         </div>
 
         {/* User icon -> opens settings */}
         <button
           onClick={() => navigate("/settings")}
           title={t("settings")}
-          style={{ display: "flex", alignItems: "center", gap: 10, background: "transparent", border: "none", cursor: "pointer" }}
+          style={{ display: "flex", alignItems: "center", gap: 10, background: "transparent", border: "none", cursor: "pointer", flexShrink: 0 }}
         >
           <div style={{ width: 32, height: 32, borderRadius: 2, background: "var(--faint)", color: "var(--ink)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, border: "1px solid var(--border)", fontFamily: "var(--mono)" }}>
             {(user?.name || "U").slice(0, 1).toUpperCase()}
           </div>
-          <span style={{ fontWeight: 800, fontSize: 12, letterSpacing: "0.05em", color: "var(--ink)", fontFamily: "var(--mono)" }}>
+          <span className="desktop-only" style={{ fontWeight: 800, fontSize: 12, letterSpacing: "0.05em", color: "var(--ink)", fontFamily: "var(--mono)" }}>
             {user?.name || "USER"}
           </span>
         </button>
       </div>
+
+      {/* Mobile notifications modal - anchored to viewport so it's never off-screen */}
+      {showNotifications && (
+        <div className="notifications-modal" onClick={() => setShowNotifications(false)}>
+          <div className="notifications-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-card-head">
+              <span style={{ fontSize: 12, fontFamily: "var(--mono)", letterSpacing: "0.1em", color: "var(--muted)" }}>
+                {t("goalReached").toUpperCase()}
+              </span>
+              <button onClick={() => setShowNotifications(false)} style={{ background: "none", border: "none", color: "var(--muted)", fontSize: 20, cursor: "pointer" }}>✕</button>
+            </div>
+            {reachedGoals.length === 0 ? (
+              <div style={{ padding: 16, fontSize: 13, color: "var(--muted)", fontFamily: "var(--mono)" }}>
+                [ {t("noNotifications").toUpperCase()} ]
+              </div>
+            ) : (
+              reachedGoals.map((g) => (
+                <div key={g.id} onClick={() => { setShowNotifications(false); navigate(`/goals/${g.id}`); }} style={{ padding: "12px 16px", cursor: "pointer", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontWeight: 700, fontSize: 13 }}>{g.exerciseName}</span>
+                  <span className="score-cell success" style={{ fontSize: 10 }}>100% ✓</span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 }

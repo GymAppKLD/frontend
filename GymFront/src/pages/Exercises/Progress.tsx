@@ -40,6 +40,7 @@ export default function Progress() {
   const [progress, setProgress] = useState<ExerciseProgressDTO | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+  const [mode, setMode] = useState<"e1rm" | "load">("e1rm");
 
   useEffect(() => {
     if (!id || !token) return;
@@ -47,7 +48,13 @@ export default function Progress() {
     fetchExerciseProgress(id).then(setProgress).catch(() => setError("FAILED TO LOAD TELEMETRY"));
   }, [id, token]);
 
-  const volumePoints = progress ? progress.points.map((p) => p.volumeKg) : [];
+  const volumePoints = progress
+    ? mode === "e1rm"
+      ? progress.points.map((p) => p.volumeKg)
+      : [...progress.sessions]
+          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+          .map((s) => s.bestSetWeightKg)
+    : [];
   const chart = lineChartPath(volumePoints);
 
   return (
@@ -66,12 +73,18 @@ export default function Progress() {
               <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.15em", marginBottom: 8, textTransform: "uppercase" }}>{translateMuscle(exercise.muscleGroup)}</div>
               <h1 style={{ fontSize: 32, fontWeight: 800, letterSpacing: "-0.03em", textTransform: "uppercase" }}>{exercise.name}</h1>
             </div>
-            <div className="score-cell" style={{ fontSize: 11, letterSpacing: "0.1em" }}>E1RM MODE</div>
+            <button
+              onClick={() => setMode((m) => (m === "e1rm" ? "load" : "e1rm"))}
+              title={mode === "e1rm" ? "Switch to Absolute Load" : "Switch to E1RM"}
+              style={{ background: "var(--info-glow)", color: "var(--info)", border: "1px solid var(--info)", borderRadius: 4, padding: "6px 12px", fontSize: 11, letterSpacing: "0.1em", cursor: "pointer", fontFamily: "var(--mono)", fontWeight: 700, whiteSpace: "nowrap" }}
+            >
+              {mode === "e1rm" ? "E1RM MODE" : "LOAD MODE"}
+            </button>
           </div>
 
           {progress && (
             <>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
+              <div className="scoreboard-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
                 <div className="card" style={{ textAlign: "center", padding: 20 }}>
                   <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.1em", marginBottom: 12 }}>{t("latest").toUpperCase()}</div>
                   <div className="score-cell active" style={{ fontSize: 16, width: "100%" }}>{progress.latestWeightKg} KG x {progress.latestReps}</div>
@@ -81,8 +94,10 @@ export default function Progress() {
                   <div className="score-cell success" style={{ fontSize: 16, width: "100%" }}>{progress.bestWeightKg} x {progress.bestReps}</div>
                 </div>
                 <div className="card" style={{ textAlign: "center", padding: 20 }}>
-                  <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.1em", marginBottom: 12 }}>{t("estimated1rm").toUpperCase()}</div>
-                  <div className="score-cell" style={{ fontSize: 16, width: "100%" }}>{progress.estimated1Rm.toFixed(1)} KG</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.1em", marginBottom: 12 }}>{mode === "e1rm" ? t("estimated1rm").toUpperCase() : t("bestLoad").toUpperCase()}</div>
+                  <div className="score-cell" style={{ fontSize: 16, width: "100%" }}>
+                    {mode === "e1rm" ? `${progress.estimated1Rm.toFixed(1)} KG` : `${progress.bestWeightKg} KG`}
+                  </div>
                 </div>
                 <div className="card" style={{ textAlign: "center", padding: 20 }}>
                   <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", letterSpacing: "0.1em", marginBottom: 12 }}>{t("progression").toUpperCase()}</div>
@@ -95,7 +110,7 @@ export default function Progress() {
               {chart && (
                 <div className="card" style={{ marginBottom: 24 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, borderBottom: "1px solid var(--border)", paddingBottom: 16 }}>
-                    <div style={{ fontSize: 13, fontFamily: "var(--mono)", textTransform: "uppercase", letterSpacing: "0.15em", color: "var(--muted)", fontWeight: 800 }}>ESTIMATED 1RM — 90D</div>
+                    <div style={{ fontSize: 13, fontFamily: "var(--mono)", textTransform: "uppercase", letterSpacing: "0.15em", color: "var(--muted)", fontWeight: 800 }}>{mode === "e1rm" ? "ESTIMATED 1RM — 90D" : "ABSOLUTE LOAD — 90D"}</div>
                     <span className="score-cell" style={{ fontSize: 11 }}>LAST 3 MONTHS</span>
                   </div>
                   <svg viewBox={`0 0 ${chart.w} ${chart.h}`} width="100%" style={{ overflow: "visible" }}>

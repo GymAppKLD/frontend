@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { fetchAllExercises } from "../../api/exerciseApi";
 import { createGoal } from "../../api/goalApi";
 import { usePreferences } from "../../context/PreferencesContext";
+import ExerciseSelect from "../../components/ExerciseSelect";
 import type { Exercise } from "../../types/exercise";
 
 export default function CreateGoal() {
@@ -62,11 +63,7 @@ export default function CreateGoal() {
       <div className="card" style={{ padding: 32 }}>
         <div className="field">
           <label>{t("target").toUpperCase()} ({t("exercises").toUpperCase()})</label>
-          <select value={exerciseId} onChange={(e) => setExerciseId(e.target.value)} style={{ textTransform: "uppercase" }}>
-            {exercises.map((e) => (
-              <option key={e.id} value={e.id}>{e.name} ({e.muscleGroup})</option>
-            ))}
-          </select>
+          <ExerciseSelect exercises={exercises} value={exerciseId} onChange={setExerciseId} />
         </div>
 
         <div className="field-row">

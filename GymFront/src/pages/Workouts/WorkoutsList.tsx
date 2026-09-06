@@ -27,6 +27,8 @@ export default function WorkoutsList() {
   // Modals state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
+  const [showDeleteTemplateModal, setShowDeleteTemplateModal] = useState(false);
+  const [deleteTemplateId, setDeleteTemplateId] = useState<string | null>(null);
   
   // Builder state
   const [templateName, setTemplateName] = useState("");
@@ -162,7 +164,7 @@ export default function WorkoutsList() {
   };
 
   const handleDeleteTemplate = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this template?")) return;
+    if (!id) return;
     try {
       await deleteWorkout(id);
       if (editingTemplateId === id) setIsModalOpen(false);
@@ -174,10 +176,10 @@ export default function WorkoutsList() {
 
   return (
     <>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 48, marginTop: 16 }}>
+      <div className="page-head" style={{ marginBottom: 32, marginTop: 16 }}>
         <div>
+          <div style={{ width: 40, height: 4, background: "var(--accent)", marginBottom: 8 }}></div>
           <h1 style={{ fontSize: 32, fontWeight: 800, color: "var(--ink)", letterSpacing: "-0.03em" }}>{t("workouts")}</h1>
-          <div style={{ width: 40, height: 4, background: "var(--accent)", marginTop: 8 }}></div>
         </div>
         <button 
           onClick={openCreateModal}
@@ -191,7 +193,7 @@ export default function WorkoutsList() {
       {error && <div style={{ color: "var(--pink)", margin: "40px 0", fontFamily: "monospace" }}>[ ERR: {error} ]</div>}
 
       {!loading && !error && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, alignItems: "start" }}>
+        <div className="workouts-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, alignItems: "start" }}>
           
           {/* TEMPLATES LIST */}
           <div>
@@ -277,12 +279,12 @@ export default function WorkoutsList() {
 
       {/* TEMPLATE BUILDER MODAL */}
       {isModalOpen && (
-        <div style={{
+        <div className="modal-backdrop" style={{
           position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
           background: "rgba(0,0,0,0.85)", backdropFilter: "blur(4px)", zIndex: 999,
           display: "flex", justifyContent: "center", alignItems: "center", padding: 24
         }}>
-          <div style={{ width: "100%", maxWidth: 640, maxHeight: "90vh", overflowY: "auto", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 8, padding: 32, position: "relative", boxShadow: "0 24px 48px rgba(0,0,0,0.5)" }}>
+          <div className="modal-card" style={{ width: "100%", maxWidth: 640, maxHeight: "90vh", overflowY: "auto", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 8, padding: 32, position: "relative", boxShadow: "0 24px 48px rgba(0,0,0,0.5)" }}>
             <button 
               onClick={() => setIsModalOpen(false)} 
               style={{ position: "absolute", top: 24, right: 24, background: "none", border: "none", fontSize: 24, cursor: "pointer", color: "var(--muted)" }}
@@ -297,15 +299,16 @@ export default function WorkoutsList() {
             {!editingTemplateId ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <label style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{t("designation")}</label>
-                <div style={{ display: "flex", gap: 12 }}>
+                <div className="input-row" style={{ display: "flex", gap: 12 }}>
                   <input 
                     value={templateName} 
                     onChange={(e) => setTemplateName(e.target.value)} 
                     placeholder="e.g. Upper - Push Day" 
-                    style={{ flex: 1, background: "var(--faint)", border: "1px solid var(--border)", color: "var(--ink)", padding: "12px 16px", borderRadius: 4, fontSize: 16 }}
+                    style={{ flex: 1, minWidth: 0, background: "var(--faint)", border: "1px solid var(--border)", color: "var(--ink)", padding: "12px 16px", borderRadius: 4, fontSize: 16 }}
                   />
                   <button 
                     onClick={handleCreateTemplate}
+                    className="create-btn"
                     style={{ background: "var(--accent)", color: "var(--bg)", border: "none", padding: "0 24px", borderRadius: 4, fontWeight: 700, cursor: "pointer", textTransform: "uppercase" }}
                   >
                     {t("create")}
@@ -321,7 +324,7 @@ export default function WorkoutsList() {
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 32 }}>
                   <label style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{t("appendModule")}</label>
-                  <div style={{ display: "flex", gap: 12 }}>
+                  <div className="input-row" style={{ display: "flex", gap: 12 }}>
                     <select 
                       value={selectedExerciseId} 
                       onChange={(e) => setSelectedExerciseId(e.target.value)}
@@ -376,8 +379,9 @@ export default function WorkoutsList() {
 
                 <div style={{ marginTop: 48, display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--border)", paddingTop: 24 }}>
                   <button 
-                    onClick={() => handleDeleteTemplate(editingTemplateId)}
-                    style={{ background: "transparent", border: "none", color: "var(--pink)", cursor: "pointer", fontSize: 13, fontWeight: 700, textTransform: "uppercase" }}
+                    onClick={() => { setDeleteTemplateId(editingTemplateId); setShowDeleteTemplateModal(true); }}
+                    className="btn btn-ghost"
+                    style={{ color: "var(--danger)", fontSize: 12 }}
                   >
                     {t("deleteTemplate")}
                   </button>
@@ -390,6 +394,21 @@ export default function WorkoutsList() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {showDeleteTemplateModal && (
+        <div className="modal-backdrop" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", zIndex: 1000, display: "flex", justifyContent: "center", alignItems: "center", padding: 24 }}>
+          <div className="modal-card" style={{ width: "100%", maxWidth: 420, background: "var(--card)", border: "1px solid var(--danger)", borderRadius: 8, padding: 32 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 8, color: "var(--danger)", fontFamily: "var(--mono)", letterSpacing: "0.05em" }}>{t("deleteTemplate")}?</h2>
+            <div style={{ fontSize: 14, color: "var(--muted)", marginBottom: 24, lineHeight: 1.5 }}>
+              {t("deleteTemplateMsg")}
+            </div>
+            <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
+              <button onClick={() => setShowDeleteTemplateModal(false)} className="btn btn-outline">{t("cancel")}</button>
+              <button onClick={() => { if (deleteTemplateId) handleDeleteTemplate(deleteTemplateId); setShowDeleteTemplateModal(false); }} className="btn" style={{ background: "var(--danger)", color: "var(--bg)", border: "none" }}>{t("deleteTemplate")}</button>
+            </div>
           </div>
         </div>
       )}

@@ -2,7 +2,7 @@ import type { Member } from "../types/member";
 import type { DashboardStatsDTO, ProgressOverviewDTO } from "../types/progress";
 import { getAuthHeaders } from "./apiClient";
 
-const API_BASE_URL = "http://localhost:8080/api";
+const API_BASE_URL = "/api";
 
 export async function fetchMemberById(): Promise<Member> {
   const res = await fetch(`${API_BASE_URL}/members/me`, { headers: getAuthHeaders() });
