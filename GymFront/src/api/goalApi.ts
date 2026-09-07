@@ -1,7 +1,7 @@
 import type { CreateGoalPayload, Goal } from "../types/goal";
 import { getAuthHeaders } from "./apiClient";
 
-const API_BASE_URL = "/api";
+const API_BASE_URL = `${import.meta.env.VITE_API_URL ?? ""}/api`;
 
 export async function fetchGoalsByMember(): Promise<Goal[]> {
   const res = await fetch(`${API_BASE_URL}/goals`, {
