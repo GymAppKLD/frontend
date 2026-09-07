@@ -15,7 +15,7 @@ export default defineConfig({
         description: 'Deep progress and workout tracking for serious lifters',
         theme_color: '#060607',
         background_color: '#060607',
-        display: 'fullscreen',
+        display: 'standalone',
         orientation: 'portrait',
         icons: [
           {

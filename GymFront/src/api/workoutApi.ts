@@ -1,7 +1,7 @@
 import type { WorkoutResponse, WorkoutSummary } from "../types/workout";
 import { getAuthHeaders } from "./apiClient";
 
-const API_BASE_URL = "/api";
+const API_BASE_URL = `${import.meta.env.VITE_API_URL ?? ""}/api`;
 
 interface RawWorkoutExercise {
   id: string;
